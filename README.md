@@ -1,6 +1,9 @@
 # Singularity Definitions
 
-## Structure
+## Pre-built Containers
+Some of the containers in this repository may be pre-build and found here: https://cloud.sylabs.io/library/dcat52
+
+## Directory Structure
 The directory structure is shown below.
 ```
 .

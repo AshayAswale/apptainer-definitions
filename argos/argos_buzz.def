@@ -1,0 +1,115 @@
+Bootstrap: localimage
+From: argos_base.sif
+
+# =====================================
+# =====================================
+# ====== Manually configurable setup
+%post
+
+  # BUZZ REPO SOURCE ORG
+  # use "NESTLab" or "buzz-lang"
+  BUZZ_REPO="buzz-lang"
+
+  # GIT HASHES
+  # use "latest" for most recent commit
+  BUZZ_HASH="latest"
+  KHEPERAIV_HASH="latest"
+# =====================================
+# =====================================
+
+%labels --force
+  AUTHOR dscatherman@wpi.edu
+  VERSION v0.1
+  NAME argos_with_buzz
+  BASE_IMG argos_base
+
+%help --force
+  This container installs Buzz and kheperaiv on top of the argos base.
+  You can launch this container as a shell, or directly run ARGoS programs by replacing the executable of argos3 with the container.
+
+  View the Labels to see the configuration used of the built container.
+
+%environment
+  # Do Nothing
+
+# =====================================
+# ====== Setup general requirements
+%post
+
+  if [ -z "$BUILD_TYPE" ]; then
+    echo "Build type is not set."
+    exit -1
+  fi
+
+  if [ -z "$PACKAGES" ]; then
+    echo "Package directory is not set."
+    exit -1
+  fi
+
+# =====================================
+# ====== Install Buzz
+%post
+
+  cd $PACKAGES
+  git clone https://github.com/${BUZZ_REPO}/Buzz.git buzz
+  cd buzz
+
+  if [ "$BUZZ_HASH" = "latest" ]; then
+    BUZZ_HASH=`git rev-parse --short HEAD`
+  else
+    git checkout $BUZZ_HASH
+  fi
+
+  mkdir build
+  cd build
+
+  if [ "$BUILD_TYPE" = "Debug" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Debug ../src
+  elif [ "$BUILD_TYPE" = "Release" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Release ../src
+  fi
+
+  make -j 16
+  make install
+  ldconfig
+
+# =====================================
+# ====== Install argos3-kheperaiv
+%post
+
+  cd $PACKAGES
+  git clone https://github.com/ilpincy/argos3-kheperaiv.git
+  cd argos3-kheperaiv
+
+  if [ "$KHEPERAIV_HASH" = "latest" ]; then
+    KHEPERAIV_HASH=`git rev-parse --short HEAD`
+  else
+    git checkout $KHEPERAIV_HASH
+  fi
+
+  mkdir build_sim
+  cd build_sim
+
+  if [ "$BUILD_TYPE" = "Debug" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Debug ../src
+  elif [ "$BUILD_TYPE" = "Release" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Release ../src
+  fi
+
+  make -j 16
+  make install
+  ldconfig
+
+# =====================================
+# ====== Cleanup setup
+%post
+
+  # add created on info to label
+  DT=`date`
+  echo "CREATED_ON $DT" >> $SINGULARITY_LABELS
+  
+  # store what buzz repo was used
+  echo "_BUZZ_REPO $BUZZ_REPO" >> "$SINGULARITY_LABELS"
+  # store the git hashes into labels
+  echo "_HASH_BUZZ $BUZZ_HASH" >> "$SINGULARITY_LABELS"
+  echo "_HASH_KHEPERAIV $KHEPERAIV_HASH" >> "$SINGULARITY_LABELS"

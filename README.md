@@ -9,16 +9,22 @@ The available containers should be signed with the following Fingerprint if from
 0EDFFAA27F7120F242C6FC6EAD8FA31C9EEEF446
 ```
 
+## How to Use
+The repository may be used in a variety of ways, one recommended method is to build the containers into the `./apps` directory and prepend the `./apps` directory to the system path. This will allow using the apps with scripts as if they were installed on the host system.
+
 ## Directory Structure
 The directory structure is shown below.
 ```
 .
+├── apps
+│   ├── argos3
+│   └── bzzc
 ├── argos
 │   ├── argos_base.def
 │   └── argos_buzz.def
 └── README.md
 
-1 directory, 3 files
+2 directories, 5 files
 ```
 
 ### ARGoS

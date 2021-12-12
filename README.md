@@ -10,23 +10,44 @@ The available containers should be signed with the following Fingerprint if from
 ```
 
 ## How to Use
-The repository may be used in a variety of ways, one recommended method is to build the containers into the `./apps` directory and prepend the `./apps` directory to the system path. This will allow using the apps with scripts as if they were installed on the host system.
+The repository may be used in a variety of ways, usually with building the containers into the `./containers` directory. Then adding files/folders to your path variable, likely done in your `~/.bashrc` file. The example bash commands assume this repo is setup on your home directory.
+
+### Prepend Path
+ Every program can be added with overriding your locally installed programs by prepending `./bin` directory to the system path.  This will allow using the apps with scripts as if they were installed on the host system. Note that all commands found in the `./bin` folder will override system commands regardless of whether the containers are built.
+ ```bash
+ PATH=~/singularity-definitions/bin:$PATH
+ ```
+ 
+ To only override single commands, prepend only those endpoints to your path.
+ ```bash
+ PATH=~/singularity-definitions/bin/argos3:$PATH
+ ```
+
+### Postpend Path
+Every program can be added but still using a locally installed version as preferred by postpending `./bin` directory to the system path. This too will allow using the apps with scripts as if they were installed on the host system. Note that the commands found in the `./bin` folder will not be used if there is a locally installed version on your path.
+ ```bash
+ PATH=$PATH:~/singularity-definitions/bin
+ ```
 
 ## Directory Structure
-The directory structure is shown below.
+The directory structure with built containers is shown below.
 ```
 .
-├── apps
+├── bin
 │   ├── argos3
-│   └── bzzc
-├── argos
-│   ├── argos_base.def
-│   └── argos_buzz.def
-└── README.md
+│   ├── bzzc
+├── containers
+│   ├── argos_base.sif
+│   ├── argos_buzz.sif
+├── definitions
+│   ├── argos
+│   │   ├── argos_base.def
+│   │   └── argos_buzz.def
+├── README.md
 
-2 directories, 5 files
 ```
 
+## Definitions
 ### ARGoS
 The argos subdirectory contains definition files for ARGoS simulation software.
 

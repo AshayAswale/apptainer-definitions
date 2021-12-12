@@ -36,13 +36,23 @@ The directory structure with built containers is shown below.
 ├── bin
 │   ├── argos3
 │   ├── bzzc
+│   ├── pip
+│   ├── pip3
+│   ├── python
+│   ├── python3
+│   ├── python3.10
 ├── containers
 │   ├── argos_base.sif
 │   ├── argos_buzz.sif
+│   ├── python3.sif
+│   ├── python3.10.sif
 ├── definitions
 │   ├── argos
 │   │   ├── argos_base.def
 │   │   └── argos_buzz.def
+│   ├── python
+│   │   ├── python3.10.def
+│   │   └── python3.def
 ├── README.md
 
 ```
@@ -63,3 +73,12 @@ The ARGoS definition files contain the following configurable variables at the t
 ```
 
 The first four variables should be valid git hashes (i.e. `32c42b0`) that can be checked out or set to `latest`. The fifth variable should be a valid GitHub org that has a Buzz repository (i.e. `buzz-lang` or `NESTLab`). The sixth variable should be set to either `Debug` or `Release`. The former enables more debuggable code at the expense of speed.
+
+### Python
+The python subdirectory contains definition files for Python versions.
+
+#### Python3
+The `python3.def` sets up a python environment with the latest download on 20.04 apt repositories. Pip is also configured within.
+
+#### Python3.10
+The `python3.10.def` sets up a specific python version by adding a ppa to apt. Pip is also configured within.

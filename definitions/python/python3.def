@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%labels
+  AUTHOR dscatherman@wpi.edu
+  VERSION v0.1
+  NAME python3
+
+%help
+  This container contains a basic python3 install and pip3. 
+  When running as a non-root user, the user home folder should be mounted as python packages should be installed there.
+
+%environment
+  # Do Nothing
+
+# =====================================
+# ====== Setup general requirements
+%post
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt -y update
+  apt -q -y install python3 python3-venv python3-pip
+  apt -q -y install python-is-python3
+  
+  # empty the cache to reduce image size
+  apt-get clean
+  # add created on info to label
+
+  alias pip=pip3
+
+# =====================================
+# ====== Cleanup setup
+%post
+  DT=`date`
+  echo "CREATED_ON $DT" >> $SINGULARITY_LABELS
+  PYTHON_VERSION=`python3 --version`
+  echo "PYTHON_VERSION $PYTHON_VERSION" >> $SINGULARITY_LABELS

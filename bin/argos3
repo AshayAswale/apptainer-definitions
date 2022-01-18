@@ -3,5 +3,5 @@ dir="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
 img=../containers/argos_buzz.sif
 cmd=$(basename "$0")
 arg="$@"
-echo running: singularity exec "${dir}/${img}" $cmd $arg
+# echo running: singularity exec "${dir}/${img}" $cmd $arg
 singularity exec --nv "${dir}/${img}" $cmd $arg

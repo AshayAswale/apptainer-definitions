@@ -36,20 +36,29 @@ The directory structure with built containers is shown below.
 ├── bin
 │   ├── argos3
 │   ├── bzzc
+│   ├── git
 │   ├── pip
 │   ├── pip3
 │   ├── python
 │   ├── python3
 │   ├── python3.10
+│   ├── screen
+│   ├── tldr
+│   ├── tmux
+│   ├── tree
+│   ├── vim
 ├── containers
 │   ├── argos_base.sif
 │   ├── argos_buzz.sif
+│   ├── linux_cmds.sif
 │   ├── python3.sif
 │   ├── python3.10.sif
 ├── definitions
 │   ├── argos
 │   │   ├── argos_base.def
 │   │   └── argos_buzz.def
+│   ├── linux_common
+│   │   ├── linux_cmds.def
 │   ├── python
 │   │   ├── python3.10.def
 │   │   └── python3.def
@@ -73,6 +82,12 @@ The ARGoS definition files contain the following configurable variables at the t
 ```
 
 The first four variables should be valid git hashes (i.e. `32c42b0`) that can be checked out or set to `latest`. The fifth variable should be a valid GitHub org that has a Buzz repository (i.e. `buzz-lang` or `NESTLab`). The sixth variable should be set to either `Debug` or `Release`. The former enables more debuggable code at the expense of speed.
+
+### Linux Common
+The Linux Common subdirectory contains definition files for common or useful linux packages.
+
+### Linux_cmds
+The `linux_cmds.def` sets up common apt packages such as git, tree, tmux, and etc.
 
 ### Python
 The python subdirectory contains definition files for Python versions.

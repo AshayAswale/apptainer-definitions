@@ -4,4 +4,4 @@ img=../containers/argos_buzz.sif
 cmd=$(basename "$0")
 arg="$@"
 # echo running: singularity exec "${dir}/${img}" $cmd $arg
-singualrity exec --nv "${dir}/${img}" $arg
+apptainer exec --nv "${dir}/${img}" $arg

@@ -19,7 +19,7 @@ From: containers/argos_base_release.sif
 
 %labels --force
   AUTHOR dscatherman@wpi.edu
-  VERSION v0.1
+  VERSION v0.2
   NAME argos_with_buzz
   BASE_IMG argos_base
 
@@ -110,10 +110,10 @@ From: containers/argos_base_release.sif
 
   # add created on info to label
   DT=`date`
-  echo "CREATED_ON $DT" >> $SINGULARITY_LABELS
+  echo "CREATED_ON $DT" >> $APPTAINER_LABELS
   
   # store what buzz repo was used
-  echo "_BUZZ_REPO $BUZZ_REPO" >> "$SINGULARITY_LABELS"
+  echo "_BUZZ_REPO $BUZZ_REPO" >> "$APPTAINER_LABELS"
   # store the git hashes into labels
-  echo "_HASH_BUZZ $BUZZ_HASH" >> "$SINGULARITY_LABELS"
-  echo "_HASH_KHEPERAIV $KHEPERAIV_HASH" >> "$SINGULARITY_LABELS"
+  echo "_HASH_BUZZ $BUZZ_HASH" >> "$APPTAINER_LABELS"
+  echo "_HASH_KHEPERAIV $KHEPERAIV_HASH" >> "$APPTAINER_LABELS"

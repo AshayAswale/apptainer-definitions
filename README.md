@@ -1,7 +1,4 @@
-# Singularity Definitions
-
-## Pre-built Containers
-Some of the containers in this repository may be pre-build and found here: https://cloud.sylabs.io/library/dcat52
+# Apptainer Definitions
 
 ### Fingerprint
 The available containers should be signed with the following Fingerprint if from me:
@@ -15,18 +12,18 @@ The repository may be used in a variety of ways, usually with building the conta
 ### Prepend Path
  Every program can be added with overriding your locally installed programs by prepending `./bin` directory to the system path.  This will allow using the apps with scripts as if they were installed on the host system. Note that all commands found in the `./bin` folder will override system commands regardless of whether the containers are built.
  ```bash
- PATH=~/singularity-definitions/bin:$PATH
+ PATH=~/apptainer-definitions/bin:$PATH
  ```
  
  To only override single commands, prepend only those endpoints to your path.
  ```bash
- PATH=~/singularity-definitions/bin/argos3:$PATH
+ PATH=~/apptainer-definitions/bin/argos3:$PATH
  ```
 
 ### Postpend Path
 Every program can be added but still using a locally installed version as preferred by postpending `./bin` directory to the system path. This too will allow using the apps with scripts as if they were installed on the host system. Note that the commands found in the `./bin` folder will not be used if there is a locally installed version on your path.
  ```bash
- PATH=$PATH:~/singularity-definitions/bin
+ PATH=$PATH:~/apptainer-definitions/bin
  ```
 
 ## Directory Structure

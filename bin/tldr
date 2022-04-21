@@ -4,4 +4,4 @@ img=../containers/linux_cmds.sif
 cmd=$(basename "$0")
 arg="$@"
 # echo running: singularity exec "${dir}/${img}" $cmd $arg
-singularity exec "${dir}/${img}" $cmd $arg
+apptainer exec "${dir}/${img}" $cmd $arg

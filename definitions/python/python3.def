@@ -33,6 +33,6 @@ From: ubuntu:20.04
 # ====== Cleanup setup
 %post
   DT=`date`
-  echo "CREATED_ON $DT" >> $SINGULARITY_LABELS
+  echo "CREATED_ON $DT" >> $APPTAINER_LABELS
   PYTHON_VERSION=`python3 --version`
-  echo "PYTHON_VERSION $PYTHON_VERSION" >> $SINGULARITY_LABELS
+  echo "PYTHON_VERSION $PYTHON_VERSION" >> $APPTAINER_LABELS

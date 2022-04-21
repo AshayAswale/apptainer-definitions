@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: argos_base.sif
+From: containers/argos_base_release.sif
 
 # =====================================
 # =====================================
@@ -7,8 +7,8 @@ From: argos_base.sif
 %post
 
   # BUZZ REPO SOURCE ORG
-  # use "NESTLab" or "buzz-lang"
-  BUZZ_REPO="buzz-lang"
+  # use "NESTLab" or "buzz-lang" or other
+  BUZZ_REPO="dcat52"
 
   # GIT HASHES
   # use "latest" for most recent commit
@@ -66,7 +66,9 @@ From: argos_base.sif
   if [ "$BUILD_TYPE" = "Debug" ]; then
     cmake -DCMAKE_BUILD_TYPE=Debug ../src
   elif [ "$BUILD_TYPE" = "Release" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Release ../src
+    cmake -DCMAKE_BUILD_TYPE=Release  \
+      -DARGOS_FORCE_NO_QTOPENGL=ON \
+      ../src
   fi
 
   make -j 16
@@ -93,7 +95,9 @@ From: argos_base.sif
   if [ "$BUILD_TYPE" = "Debug" ]; then
     cmake -DCMAKE_BUILD_TYPE=Debug ../src
   elif [ "$BUILD_TYPE" = "Release" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Release ../src
+    cmake -DCMAKE_BUILD_TYPE=Release  \
+      -DARGOS_FORCE_NO_QTOPENGL=ON \
+      ../src
   fi
 
   make -j 16

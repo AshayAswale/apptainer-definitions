@@ -8,7 +8,7 @@ From: ubuntu:20.04
 
   # ARGOS3 REPO SOURCE ORG
   # use "ilpincy" or other
-  ARGOS_REPO="dcat52"
+  ARGOS_REPO="ilpincy"
   ARGOS_EXAMPLES_REPO="ilpincy"
 
   # GIT HASHES

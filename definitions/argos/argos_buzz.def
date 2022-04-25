@@ -8,7 +8,7 @@ From: containers/argos_base_release.sif
 
   # BUZZ REPO SOURCE ORG
   # use "NESTLab" or "buzz-lang" or other
-  BUZZ_REPO="dcat52"
+  BUZZ_REPO="buzz-lang"
 
   # GIT HASHES
   # use "latest" for most recent commit

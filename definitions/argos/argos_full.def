@@ -9,11 +9,11 @@ From: ubuntu:20.04
   # REPO SOURCE ORGS
 
   # use "ilpincy" or other
-  ARGOS_REPO="dcat52"
+  ARGOS_REPO="ilpincy"
   ARGOS_EXAMPLES_REPO="ilpincy"
   KHEPERAIV_REPO="ilpincy"
   # use "NESTLab" or "buzz-lang" or other
-  BUZZ_REPO="dcat52"
+  BUZZ_REPO="buzz-lang"
 
   # GIT HASHES
 

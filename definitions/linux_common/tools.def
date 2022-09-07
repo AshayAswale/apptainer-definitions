@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+  AUTHOR dscatherman@wpi.edu
+  VERSION v0.3
+  NAME linux_common_tools
+
+%help
+  This container contains linux common tools containerized to use on HPC systems.
+  Currently includes: tree, git, vim, nano, tldr
+
+%environment
+  # Do Nothing
+
+# === Setup general requirements ===
+%post
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt-get -y update
+  apt-get -q -y install tree git vim nano tldr
+
+  # empty the cache to reduce image size
+  apt-get clean

@@ -11,6 +11,7 @@ From: ubuntu:20.04
   ARGOS_REPO="ilpincy"
   ARGOS_EXAMPLES_REPO="ilpincy"
   KHEPERAIV_REPO="ilpincy"
+  KILOBOT_REPO="ilpincy"
   # use "NESTLab" or "buzz-lang" or other
   BUZZ_REPO="buzz-lang"
 
@@ -21,11 +22,12 @@ From: ubuntu:20.04
   ARGOS_EXAMPLES_HASH="latest"
   BUZZ_HASH="latest"
   KHEPERAIV_HASH="latest"
+  KILOBOT_HASH="latest"
 
   # BUILD TYPE
   
   # use "Debug" or "Release"
-  BUILD_TYPE="Release"
+  BUILD_TYPE="Debug"
 
   # use "OFF" or "ON" when BUILD_TYPE is set to "Release"
   BUILD_NATIVE="OFF"
@@ -186,6 +188,34 @@ From: ubuntu:20.04
 
   mkdir build_sim
   cd build_sim
+
+  if [ "$BUILD_TYPE" = "Debug" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Debug ../src
+  elif [ "$BUILD_TYPE" = "Release" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Release  \
+      -DARGOS_FORCE_NO_QTOPENGL=ON \
+      ../src
+  fi
+
+  make -j 16
+  make install
+  ldconfig
+
+# === Install argos3-kilobot ===
+%post
+
+  cd $PACKAGES
+  git clone https://github.com/${KILOBOT_REPO}/argos3-kilobot.git
+  cd argos3-kilobot
+
+  if [ "$KILOBOT_HASH" = "latest" ]; then
+    KILOBOT_HASH=`git rev-parse --short HEAD`
+  else
+    git checkout $KILOBOT_HASH
+  fi
+
+  mkdir build
+  cd build
 
   if [ "$BUILD_TYPE" = "Debug" ]; then
     cmake -DCMAKE_BUILD_TYPE=Debug ../src

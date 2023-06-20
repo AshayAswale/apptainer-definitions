@@ -1,0 +1,60 @@
+Bootstrap: localimage
+From: containers/argos_full.sif
+
+%test
+  argos3 -q all
+
+%runscript
+  argos3 "$@"
+
+%files
+  /home/${USER}/.ssh/id_rsa /id_rsa
+
+# === Setup general requirements ===
+%post
+
+  PACKAGES=/user-packages
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  mkdir /root/.ssh/
+  cp /id_rsa ~/.ssh/id_rsa
+  eval `ssh-agent`
+  ssh-add ~/.ssh/id_rsa
+
+  ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+
+# === Install Vicon ===
+%post
+#   cd $PACKAGES
+#   git clone https://github.com/ilpincy/argos3-kilobot.git
+#   cd argos3-kilobot
+#   mkdir build
+#   cd build
+#   cmake -DCMAKE_BUILD_TYPE=Release ../src
+#   make -j 16
+#   make install
+
+  cd $PACKAGES
+  git clone git@github.com:NESTLab/Vicon.git
+  cd Vicon
+
+#   if [ "$KHEPERAIV_HASH" = "latest" ]; then
+#     KHEPERAIV_HASH=`git rev-parse --short HEAD`
+#   else
+#     git checkout $KHEPERAIV_HASH
+#   fi
+
+  mkdir build
+  cd build
+
+  cmake ..
+
+  make -j 16
+  make install
+
+%post
+  rm -r ~/.ssh
+  

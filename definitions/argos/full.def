@@ -13,7 +13,7 @@ From: ubuntu:20.04
   KHEPERAIV_REPO="ilpincy"
   KILOBOT_REPO="ilpincy"
   # use "NESTLab" or "buzz-lang" or other
-  BUZZ_REPO="buzz-lang"
+  BUZZ_REPO="dcat52"
 
   # GIT HASHES
 
@@ -32,12 +32,18 @@ From: ubuntu:20.04
   # use "OFF" or "ON" when BUILD_TYPE is set to "Release"
   BUILD_NATIVE="OFF"
 
+  # use "OFF" or "ON"
+  ARGOS_INSTALL_LDSOCONF="ON"
+
+  # defaults to "/usr/local"
+  INSTALL_PREFIX="/usr/local"
+
 # ===================================
 # ===================================
 
 %labels
   AUTHOR dscatherman@wpi.edu
-  VERSION v0.3
+  VERSION v0.5
   NAME argos_full
 
 %help
@@ -47,13 +53,18 @@ From: ubuntu:20.04
   View the Labels to see the configuration used of the built container.
 
 %environment
+  export PATH=$PATH:/user-packages/bin/
+  export LD_LIBRARY_PATH:$LD_LIBRARY_PATH:/user-packages/lib
+  export INSTALL_PREFIX="/user-packages"
   # Do Nothing
 
-%test
-  argos3 -q all
+# %test
+#   argos3 -q all
 
 %runscript
-  argos3 "$@"
+  cmd=$(basename "$0")
+  arg="$@"
+  $cmd $arg
 
 # === Setup general requirements ===
 %post
@@ -104,18 +115,20 @@ From: ubuntu:20.04
     cmake \
       -DCMAKE_BUILD_TYPE=Debug \
       -DARGOS_DOCUMENTATION=ON \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ../src
   elif [ "$BUILD_TYPE" = "Release" ]; then
     cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -DARGOS_FORCE_NO_QTOPENGL=ON \
       -DARGOS_DOCUMENTATION=OFF \
-      -DARGOS_INSTALL_LDSOCONF=ON \
+      -DARGOS_INSTALL_LDSOCONF=$ARGOS_INSTALL_LDSOCONF \
       -DARGOS_BUILD_NATIVE=$BUILD_NATIVE \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ../src
   fi
 
-  make -j 16
+  make -j $NUM_BUILD_THREADS
   if [ "$BUILD_TYPE" = "Debug" ]; then
     make doc
   fi
@@ -136,14 +149,18 @@ From: ubuntu:20.04
   mkdir build
   cd build
   if [ "$BUILD_TYPE" = "Debug" ]; then
-      cmake -DCMAKE_BUILD_TYPE=Debug ..
+      cmake \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+        ..
   elif [ "$BUILD_TYPE" = "Release" ]; then
       cmake \
         -DCMAKE_BUILD_TYPE=Release  \
         -DARGOS_FORCE_NO_QTOPENGL=ON \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
         ..
   fi
-  make -j 16
+  make -j $NUM_BUILD_THREADS
 
 # === Install Buzz ===
 %post
@@ -162,14 +179,19 @@ From: ubuntu:20.04
   cd build
 
   if [ "$BUILD_TYPE" = "Debug" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Debug ../src
+    cmake \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+      ../src
   elif [ "$BUILD_TYPE" = "Release" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Release  \
+    cmake \
+      -DCMAKE_BUILD_TYPE=Release  \
       -DARGOS_FORCE_NO_QTOPENGL=ON \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ../src
   fi
 
-  make -j 16
+  make -j $NUM_BUILD_THREADS
   make install
   ldconfig
 
@@ -190,14 +212,19 @@ From: ubuntu:20.04
   cd build_sim
 
   if [ "$BUILD_TYPE" = "Debug" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Debug ../src
+    cmake \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+      ../src
   elif [ "$BUILD_TYPE" = "Release" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Release  \
+    cmake \
+      -DCMAKE_BUILD_TYPE=Release  \
       -DARGOS_FORCE_NO_QTOPENGL=ON \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ../src
   fi
 
-  make -j 16
+  make -j $NUM_BUILD_THREADS
   make install
   ldconfig
 
@@ -218,14 +245,19 @@ From: ubuntu:20.04
   cd build
 
   if [ "$BUILD_TYPE" = "Debug" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Debug ../src
+    cmake \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+      ../src
   elif [ "$BUILD_TYPE" = "Release" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Release  \
+    cmake \
+      -DCMAKE_BUILD_TYPE=Release  \
       -DARGOS_FORCE_NO_QTOPENGL=ON \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ../src
   fi
 
-  make -j 16
+  make -j $NUM_BUILD_THREADS
   make install
   ldconfig
 
@@ -234,8 +266,9 @@ From: ubuntu:20.04
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
-  # empty the cache to reduce image size
-  apt-get clean
+   # TODO(@dcat52): if release build, empty image cache
+   # empty the cache to reduce image size
+   # apt-get clean
 
   # add created on info to label
   DT=`date`

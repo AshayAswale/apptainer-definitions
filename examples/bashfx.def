@@ -1,0 +1,51 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%post
+
+  abc() {
+    echo "$1 $2"
+  }
+
+  clone_and_checkout() {
+    echo $1 $2 $3 $4
+    HASH=$1
+    ORG=$2
+    REPO=$3
+    DIR=$4
+
+    if [ "$REPO" = "NA" ]; then
+      return
+    fi
+
+    if test -z "$DIR" 
+    then
+      DIR=$REPO
+    fi
+    git clone https://github.com/$ORG/$REPO.git $DIR
+    cd $DIR
+    
+    if [ "$HASH" = "latest" ]; then
+      HASH=`git rev-parse --short HEAD`
+    else
+      git checkout $HASH
+    fi
+  }
+
+  make_dir_and_cd() {
+    mkdir $1
+    cd $1
+  }
+
+
+%post
+  abc hello world
+
+
+  echo $PWD
+#   clone_and_checkout latest ilpincy argos3
+  make_dir_and_cd testdir
+  echo $PWD
+
+  abc bye yall
+

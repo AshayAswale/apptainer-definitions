@@ -1,0 +1,5 @@
+Bootstrap: docker
+From: ubuntu:20.04
+  
+%post
+  echo export MY_VAR="HELLO_WORLD" >> "$APPTAINER_ENVIRONMENT"

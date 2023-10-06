@@ -2,4 +2,8 @@ Bootstrap: docker
 From: ubuntu:20.04
   
 %post
+  # add created on info to label
+  DT=`date`
+  echo CREATED_ON $DT >> "$APPTAINER_LABELS"
+  
   echo export MY_VAR="HELLO_WORLD" >> "$APPTAINER_ENVIRONMENT"

@@ -2,10 +2,13 @@ Bootstrap: docker
 From: ubuntu:20.04
 
 %arguments
-  my_var="mydefault"
-  not_my_var="commentedoutdefault"
+  my_var=mydefault
+
+  search=def
 
 %post
   echo {{ my_var }}
 
-  # echo {{ not_my_var }}
+  if printf '%s\n' "{{ my_var }}" | grep -Fqe "{{ search }}"; then
+    printf 'inside\n'
+  fi

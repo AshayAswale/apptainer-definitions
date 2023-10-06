@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%arguments
+  QUIET_BUILD=ON
+
+%post
+  # with "set +x" you disable debug for bash
+  if [ "{{ QUIET_BUILD }}" = "ON" ]; then
+      set +x
+  fi
+
+%post
+  echo "Beginning a long and tedious process."
+  cd /
+  mkdir -p test
+  echo "Made a directory!"
+  cd test
+  touch hello.world
+  echo "Made a file!"
+
+  echo "Done!"
+
+  echo "  (Note: there is nothing to be done about the 1st 2 output lines, its fine)"
+  

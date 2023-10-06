@@ -2,7 +2,6 @@ Bootstrap: docker
 From: ubuntu:20.04
 
 %post
-
   abc() {
     echo "$1 $2"
   }
@@ -37,6 +36,10 @@ From: ubuntu:20.04
     cd $1
   }
 
+  if printf '%s\n' "Hello my name is Davis!" | grep -Fqe "my name"; then
+    printf 'inside\n'
+  fi
+
 
 %post
   abc hello world
@@ -48,4 +51,3 @@ From: ubuntu:20.04
   echo $PWD
 
   abc bye yall
-

@@ -1,0 +1,13 @@
+Bootstrap: docker
+From: {{ DOCKER_BASE }}
+
+%arguments
+
+  DOCKER_BASE=ubuntu:20.04
+
+%files
+  definitions/examples/addscripts-1.sh /dfx.sh
+
+%post
+  . /dfx.sh
+  dfx_abc hello world

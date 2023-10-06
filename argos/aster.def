@@ -81,7 +81,14 @@ From: {{ DOCKER_BASE }}
 # === Setup general requirements ===
 %post
 
-  clone_and_checkout() {
+  # ARG: HASH of commit to checkout (or latest)
+  # ARG: ORG of repository
+  # ARG: REPO repository to clone
+  # ARG: DIR desired path name for cloned repository (if any)
+  # IMPACTS: new folder
+  # IMPACTS: PWD
+  dfx_clone_and_checkout() {
+    echo $1 $2 $3 $4
     HASH=$1
     ORG=$2
     REPO=$3
@@ -91,10 +98,10 @@ From: {{ DOCKER_BASE }}
       return
     fi
 
-    if test -z "$DIR" 
-    then
+    if test -z "$DIR" ; then
       DIR=$REPO
     fi
+
     git clone https://github.com/$ORG/$REPO.git $DIR
     cd $DIR
     
@@ -104,6 +111,22 @@ From: {{ DOCKER_BASE }}
       git checkout $HASH
     fi
   }
+
+%post
+
+  # ARG: string to search within
+  # ARG: string to find
+  # RETURN: 1 if in string
+  dfx_string_contains() {
+    echo $1
+    echo $2
+    if printf '%s\n' "$1" | grep -Fqe "$2"; then
+      return 1
+    fi
+    return 
+  }
+
+%post
 
   PACKAGES=/user-packages
   # give user rw permissions over created files/dirs. Change to 002 for r-x.
@@ -131,7 +154,7 @@ From: {{ DOCKER_BASE }}
   # install argos3
   cd $PACKAGES
   
-  clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
+  dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
 
   mkdir build_simulator
   cd build_simulator
@@ -165,7 +188,7 @@ From: {{ DOCKER_BASE }}
 
   cd $PACKAGES
 
-  clone_and_checkout {{ HASH_ARGOS_EXAMPLES }} {{ ORG_ARGOS_EXAMPLES }} argos3-examples
+  dfx_clone_and_checkout {{ HASH_ARGOS_EXAMPLES }} {{ ORG_ARGOS_EXAMPLES }} argos3-examples
   
   if [ ! "{{ ORG_ARGOS_EXAMPLES }}" = "NA" ]; then
     mkdir build
@@ -189,7 +212,7 @@ From: {{ DOCKER_BASE }}
 # %post
 
   cd $PACKAGES
-  clone_and_checkout {{ HASH_BUZZ }} {{ ORG_BUZZ }} Buzz buzz
+  dfx_clone_and_checkout {{ HASH_BUZZ }} {{ ORG_BUZZ }} Buzz buzz
   
   if [ ! "{{ ORG_BUZZ }}" = "NA" ]; then
     mkdir build
@@ -217,8 +240,7 @@ From: {{ DOCKER_BASE }}
 %post
 
   cd $PACKAGES
-
-  clone_and_checkout {{ HASH_KHEPERAIV }} {{ ORG_KHEPERAIV }} argos3-kheperaiv
+  dfx_clone_and_checkout {{ HASH_KHEPERAIV }} {{ ORG_KHEPERAIV }} argos3-kheperaiv
   
   if [ ! "{{ ORG_KHEPERAIV }}" = "NA" ]; then
     mkdir build_sim
@@ -246,8 +268,7 @@ From: {{ DOCKER_BASE }}
 %post
 
   cd $PACKAGES
-
-  clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
+  dfx_clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
   
   if [ ! "{{ ORG_VICON }}" = "NA" ]; then
     mkdir build
@@ -259,11 +280,10 @@ From: {{ DOCKER_BASE }}
     ldconfig
   fi
 
-
 %post
 
   cd $PACKAGES
-  clone_and_checkout latest ilpincy argos3-leo
+  dfx_clone_and_checkout latest ilpincy argos3-leo
   mkdir build_sim
   cd build_sim
   cmake \

@@ -6,7 +6,13 @@ From: ubuntu:20.04
     echo "$1 $2"
   }
 
-  clone_and_checkout() {
+  # ARG: HASH of commit to checkout (or latest)
+  # ARG: ORG of repository
+  # ARG: REPO repository to clone
+  # ARG: DIR desired path name for cloned repository (if any)
+  # IMPACTS: new folder
+  # IMPACTS: PWD
+  dfx_clone_and_checkout() {
     echo $1 $2 $3 $4
     HASH=$1
     ORG=$2
@@ -17,10 +23,11 @@ From: ubuntu:20.04
       return
     fi
 
-    if test -z "$DIR" 
-    then
-      DIR=$REPO
-    fi
+    # if test -z "$DIR" 
+    # then
+    #   DIR=$REPO
+    # fi
+
     git clone https://github.com/$ORG/$REPO.git $DIR
     cd $DIR
     
@@ -31,14 +38,24 @@ From: ubuntu:20.04
     fi
   }
 
-  make_dir_and_cd() {
+  # ARG: path for directory to be made
+  # IMPACTS: PWD
+  dfx_make_dir_and_cd() {
     mkdir $1
     cd $1
   }
 
-  if printf '%s\n' "Hello my name is Davis!" | grep -Fqe "my name"; then
-    printf 'inside\n'
-  fi
+  # ARG: string to search within
+  # ARG: string to find
+  # RETURN: 1 if in string
+  dfx_string_contains() {
+    echo $1
+    echo $2
+    if printf '%s\n' "$1" | grep -Fqe "$2"; then
+      return 1
+    fi
+    return 
+  }
 
 
 %post
@@ -46,8 +63,12 @@ From: ubuntu:20.04
 
 
   echo $PWD
-#   clone_and_checkout latest ilpincy argos3
-  make_dir_and_cd testdir
+#   dfx_clone_and_checkout latest ilpincy argos3
+  dfx_make_dir_and_cd testdir
   echo $PWD
+  if dfx_string_contains my_name_is name_; then
+    echo "HERE"
+  fi
 
   abc bye yall
+

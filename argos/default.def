@@ -5,17 +5,20 @@ From: {{ DOCKER_BASE }}
 # === Manually configurable setup ===
 %arguments
 
+  VERSION=v0.9
+
   DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
 
   NUM_BUILD_THREADS=20
 
+
   # REPO SOURCE ORGS
 
-  # use "ilpincy" or other
+  # commonly "ilpincy" or "NESTLab" or "buzz-lang"
+
   ORG_ARGOS=ilpincy
   ORG_ARGOS_EXAMPLES=NA
   ORG_KHEPERAIV=ilpincy
-  # use "NESTLab" or "buzz-lang" or other
   ORG_BUZZ=dcat52
   ORG_VICON=NA
 
@@ -27,20 +30,15 @@ From: {{ DOCKER_BASE }}
   HASH_BUZZ=latest
   HASH_KHEPERAIV=latest
   HASH_VICON=latest
-
-  # BUILD TYPE
   
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
 
   # use "OFF" or "ON"
   BUILD_DOC=OFF
-  ARGOS_INSTALL_LDSOCONF=ON
-
-  # use "OFF" or "ON" when BUILD_TYPE is set to "Release"
-  BUILD_NATIVE=OFF
-
   BUILD_LUA=OFF
+  BUILD_NATIVE=OFF
+  ARGOS_INSTALL_LDSOCONF=ON
 
   PACKAGES=/user-packages
 
@@ -53,7 +51,7 @@ From: {{ DOCKER_BASE }}
 
 %labels
   AUTHOR dscatherman@wpi.edu
-  VERSION v0.9
+  VERSION {{ VERSION }}
   NAME argos
 
 %help
@@ -68,6 +66,7 @@ From: {{ DOCKER_BASE }}
   export INSTALL_PREFIX={{ INSTALL_PREFIX }}
   export CMAKE_INCLUDE_PATH={{ INSTALL_PREFIX }}
   export BUILD_TYPE={{ BUILD_TYPE }}
+  export PACKAGES={{ PACKAGES }}
 
 %test
   argos3 -q all
@@ -77,10 +76,19 @@ From: {{ DOCKER_BASE }}
   arg="$@"
   $cmd $arg
 
-# === Setup general requirements ===
 %post
+  abc() {
+    echo "$1 $2"
+  }
 
-  clone_and_checkout() {
+  # ARG: HASH of commit to checkout (or latest)
+  # ARG: ORG of repository
+  # ARG: REPO repository to clone
+  # ARG: DIR desired path name for cloned repository (if any)
+  # IMPACTS: new folder
+  # IMPACTS: PWD
+  dfx_clone_and_checkout() {
+    echo $1 $2 $3 $4
     HASH=$1
     ORG=$2
     REPO=$3
@@ -90,10 +98,10 @@ From: {{ DOCKER_BASE }}
       return
     fi
 
-    if test -z "$DIR" 
-    then
+    if test -z "$DIR" ; then
       DIR=$REPO
     fi
+
     git clone https://github.com/$ORG/$REPO.git $DIR
     cd $DIR
     
@@ -103,8 +111,30 @@ From: {{ DOCKER_BASE }}
       git checkout $HASH
     fi
   }
+
+  # ARG: path for directory to be made
+  # IMPACTS: PWD
+  dfx_make_dir_and_cd() {
+    mkdir $1
+    cd $1
+  }
+
+  # ARG: string to search within
+  # ARG: string to find
+  # RETURN: 1 if in string
+  dfx_string_contains() {
+    echo $1
+    echo $2
+    if printf '%s\n' "$1" | grep -Fqe "$2"; then
+      return 1
+    fi
+    return 
+  }
+  
   # give user rw permissions over created files/dirs. Change to 002 for r-x.
-  # umask 000
+#   umask 000
+
+  PACKAGES={{ PACKAGES }}
 
   mkdir $PACKAGES
   cd $PACKAGES
@@ -114,17 +144,13 @@ From: {{ DOCKER_BASE }}
   apt-get -y update
   apt-get -y install git bc gdb
 
-# === Install ARGoS3 ===
-%post
-
-  if printf '%s\n' "$1" | grep -Fqe "$2"; then
-    printf '"%s" is in "%s"\n' "$2" "$1"
+  if ! dfx_string_contains {DOCKER_BASE} dcat52; then
+    # pre-reqs only need installed if not preinstalled n the container
+    apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
+      freeglut3-dev libxi-dev libxmu-dev build-essential
   fi
-#   # pre-reqs
-#   apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
-#     qt5-default freeglut3-dev libxi-dev libxmu-dev build-essential
 
-  # pre-reqs
+  # this pre-req will require python
   apt-get install -q -y qt5-default
 
   if [ "{{ BUILD_LUA }}" = "ON" ]; then
@@ -135,13 +161,10 @@ From: {{ DOCKER_BASE }}
     apt-get install -q -y doxygen asciidoc graphviz libgraphviz-dev
   fi
 
-#   # optional pre-reqs
-#   apt-get install -q -y libga-dev
-
   # install argos3
   cd $PACKAGES
   
-  clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
+  dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
 
   mkdir build_simulator
   cd build_simulator
@@ -170,12 +193,9 @@ From: {{ DOCKER_BASE }}
   make install
   ldconfig
 
-# === Install ARGoS3-examples ===
-%post
-
   cd $PACKAGES
 
-  clone_and_checkout {{ HASH_ARGOS_EXAMPLES }} {{ ORG_ARGOS_EXAMPLES }} argos3-examples
+  dfx_clone_and_checkout {{ HASH_ARGOS_EXAMPLES }} {{ ORG_ARGOS_EXAMPLES }} argos3-examples
   
   if [ ! "{{ ORG_ARGOS_EXAMPLES }}" = "NA" ]; then
     mkdir build
@@ -195,11 +215,8 @@ From: {{ DOCKER_BASE }}
     make -j {{ NUM_BUILD_THREADS }}
   fi
 
-# # === Install Buzz ===
-# %post
-
   cd $PACKAGES
-  clone_and_checkout {{ HASH_BUZZ }} {{ ORG_BUZZ }} Buzz buzz
+  dfx_clone_and_checkout {{ HASH_BUZZ }} {{ ORG_BUZZ }} Buzz buzz
   
   if [ ! "{{ ORG_BUZZ }}" = "NA" ]; then
     mkdir build
@@ -223,12 +240,9 @@ From: {{ DOCKER_BASE }}
     ldconfig
   fi
 
-# === Install argos3-kheperaiv ===
-%post
-
   cd $PACKAGES
 
-  clone_and_checkout {{ HASH_KHEPERAIV }} {{ ORG_KHEPERAIV }} argos3-kheperaiv
+  dfx_clone_and_checkout {{ HASH_KHEPERAIV }} {{ ORG_KHEPERAIV }} argos3-kheperaiv
   
   if [ ! "{{ ORG_KHEPERAIV }}" = "NA" ]; then
     mkdir build_sim
@@ -252,12 +266,9 @@ From: {{ DOCKER_BASE }}
     ldconfig
   fi
 
-# === Install vicon ===
-%post
-
   cd $PACKAGES
 
-  clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
+  dfx_clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
   
   if [ ! "{{ ORG_VICON }}" = "NA" ]; then
     mkdir build
@@ -268,9 +279,6 @@ From: {{ DOCKER_BASE }}
     make install
     ldconfig
   fi
-
-# === Cleanup setup ===
-%post
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

@@ -5,18 +5,20 @@ From: {{ DOCKER_BASE }}
 # === Manually configurable setup ===
 %arguments
 
+  VERSION=v0.9
+
   DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
 
   NUM_BUILD_THREADS=20
 
   # REPO SOURCE ORGS
 
-  # use "ilpincy" or other
+  # commonly "ilpincy" or "NESTLab" or "buzz-lang"
+
   ORG_ARGOS=ilpincy
   ORG_ARGOS_EXAMPLES=NA
-  ORG_KHEPERAIV=NA
-  # use "NESTLab" or "buzz-lang" or other
-  ORG_BUZZ=NA
+  ORG_KHEPERAIV=ilpincy
+  ORG_BUZZ=buzz-lang
   ORG_VICON=NA
 
   # GIT HASHES
@@ -27,22 +29,21 @@ From: {{ DOCKER_BASE }}
   HASH_BUZZ=latest
   HASH_KHEPERAIV=latest
   HASH_VICON=latest
-
-  # BUILD TYPE
   
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
 
   # use "OFF" or "ON"
   BUILD_DOC=OFF
+  BUILD_LUA=OFF
+  BUILD_NATIVE=OFF
   ARGOS_INSTALL_LDSOCONF=ON
 
-  # use "OFF" or "ON" when BUILD_TYPE is set to "Release"
-  BUILD_NATIVE=OFF
+  PACKAGES=/user-packages
 
-  # defaults to "/usr/local"
-  INSTALL_PREFIX=/usr/local
-  #"/user-packages/local"
+  # defaults to "/usr/local/"
+  INSTALL_PREFIX=/user-packages/local/
+  #"/user-packages/local/"
 
   SSH_KEY_PATH=../.ssh/id_rsa
 
@@ -51,7 +52,7 @@ From: {{ DOCKER_BASE }}
 
 %labels
   AUTHOR daviscatherman@gmail.com
-  VERSION v0.9
+  VERSION {{ VERSION }}
   NAME argos
 
 %help
@@ -66,20 +67,31 @@ From: {{ DOCKER_BASE }}
   export INSTALL_PREFIX={{ INSTALL_PREFIX }}
   export CMAKE_INCLUDE_PATH={{ INSTALL_PREFIX }}
   export BUILD_TYPE={{ BUILD_TYPE }}
+  export PACKAGES={{ PACKAGES }}
 
-%test
-  argos3 -q all
+# %test
+#   argos3 -q all
 
-%runscript
-  cmd=$(basename "$0")
-  arg="$@"
-  $cmd $arg
+# %setup
+#   echo $PWD
+#   tar -C /home/davis/Research/repositories/ -czf repositories.tar.gz .
+#   mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
+
+# %files
+#   repositories.tar.gz {{ PACKAGES }}/
 
 %files
   {{ SSH_KEY_PATH }} /id_rsa
 
-# === Setup general requirements ===
+%runscript
+  cmd=argos3
+  arg="$@"
+  $cmd $arg
+
 %post
+  abc() {
+    echo "$1 $2"
+  }
 
   # ARG: HASH of commit to checkout (or latest)
   # ARG: ORG of repository
@@ -102,6 +114,11 @@ From: {{ DOCKER_BASE }}
       DIR=$REPO
     fi
 
+    if [ "$ORG" = "local" ]; then
+      cd $DIR
+      return
+    fi
+
     git clone https://github.com/$ORG/$REPO.git $DIR
     cd $DIR
     
@@ -112,7 +129,12 @@ From: {{ DOCKER_BASE }}
     fi
   }
 
-%post
+  # ARG: path for directory to be made
+  # IMPACTS: PWD
+  dfx_make_dir_and_cd() {
+    mkdir $1
+    cd $1
+  }
 
   # ARG: string to search within
   # ARG: string to find
@@ -125,34 +147,41 @@ From: {{ DOCKER_BASE }}
     fi
     return 
   }
-
-%post
-
-  PACKAGES=/user-packages
+  
   # give user rw permissions over created files/dirs. Change to 002 for r-x.
-  umask 001
+  umask 000
 
-  mkdir $PACKAGES
+  PACKAGES={{ PACKAGES }}
+
+  mkdir -p $PACKAGES
   cd $PACKAGES
   
   export DEBIAN_FRONTEND=noninteractive
 
   apt-get -y update
-  apt-get -y install git bc gdb
+  apt-get -y install git bc gdb tree
 
-# === Install ARGoS3 ===
-%post
+  if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
+    # pre-reqs only need installed if not preinstalled n the container
+    apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
+      freeglut3-dev libxi-dev libxmu-dev build-essential
+  fi
 
-  # pre-reqs
-  apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
-    qt5-default freeglut3-dev libxi-dev libxmu-dev liblua5.3-dev \
-    lua5.3 doxygen graphviz libgraphviz-dev asciidoc build-essential
+  # this pre-req will require python
+  apt-get install -q -y qt5-default python3-pip
 
-#   # optional pre-reqs
-#   apt-get install -q -y libga-dev
+  if [ "{{ BUILD_LUA }}" = "ON" ]; then
+    apt-get install -q -y liblua5.3-dev lua5.3
+  fi
 
-  # install argos3
+  if [ "{{ BUILD_DOC }}" = "ON" ]; then
+    apt-get install -q -y doxygen asciidoc graphviz libgraphviz-dev
+  fi
+
   cd $PACKAGES
+
+#   tar -xzf repositories.tar.gz
+#   rm -rf repositories.tar.gz
   
   dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
 
@@ -183,9 +212,6 @@ From: {{ DOCKER_BASE }}
   make install
   ldconfig
 
-# === Install ARGoS3-examples ===
-%post
-
   cd $PACKAGES
 
   dfx_clone_and_checkout {{ HASH_ARGOS_EXAMPLES }} {{ ORG_ARGOS_EXAMPLES }} argos3-examples
@@ -207,9 +233,6 @@ From: {{ DOCKER_BASE }}
     fi
     make -j {{ NUM_BUILD_THREADS }}
   fi
-
-# # === Install Buzz ===
-# %post
 
   cd $PACKAGES
   dfx_clone_and_checkout {{ HASH_BUZZ }} {{ ORG_BUZZ }} Buzz buzz
@@ -236,10 +259,8 @@ From: {{ DOCKER_BASE }}
     ldconfig
   fi
 
-# === Install argos3-kheperaiv ===
-%post
-
   cd $PACKAGES
+
   dfx_clone_and_checkout {{ HASH_KHEPERAIV }} {{ ORG_KHEPERAIV }} argos3-kheperaiv
   
   if [ ! "{{ ORG_KHEPERAIV }}" = "NA" ]; then
@@ -264,10 +285,8 @@ From: {{ DOCKER_BASE }}
     ldconfig
   fi
 
-# # === Install vicon ===
-%post
-
   cd $PACKAGES
+
   dfx_clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
   
   if [ ! "{{ ORG_VICON }}" = "NA" ]; then
@@ -280,8 +299,6 @@ From: {{ DOCKER_BASE }}
     ldconfig
   fi
 
-%post
-
   cd $PACKAGES
   dfx_clone_and_checkout latest ilpincy argos3-leo
   mkdir build_sim
@@ -289,7 +306,6 @@ From: {{ DOCKER_BASE }}
   cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-    -DCMAKE_INSTALL_CONTENT={{ INSTALL_PREFIX }} \
     ../src
   make -j {{ NUM_BUILD_THREADS }}
   make install
@@ -300,7 +316,7 @@ From: {{ DOCKER_BASE }}
   eval `ssh-agent`
   ssh-add ~/.ssh/id_rsa
 
-  ssh-keyscan cra.com >> ~/.ssh/known_hosts
+#   ssh-keyscan cra.com >> ~/.ssh/known_hosts
 
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
@@ -313,6 +329,7 @@ From: {{ DOCKER_BASE }}
     ..
   make -j {{ NUM_BUILD_THREADS }}
   make install
+  ldconfig
 
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/aster-integration.git
@@ -324,9 +341,6 @@ From: {{ DOCKER_BASE }}
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
     ../src
   make -j {{ NUM_BUILD_THREADS }}
-
-# === Cleanup setup ===
-%post
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
@@ -334,7 +348,7 @@ From: {{ DOCKER_BASE }}
   # apt-get clean
 
   # Do not forget to clear the ssh keys you added
-  rm -r ~/.ssh
+#   rm -r ~/.ssh
 
   # add created on info to label
   DT=`date`

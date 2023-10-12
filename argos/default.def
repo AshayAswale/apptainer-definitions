@@ -11,7 +11,6 @@ From: {{ DOCKER_BASE }}
 
   NUM_BUILD_THREADS=20
 
-
   # REPO SOURCE ORGS
 
   # commonly "ilpincy" or "NESTLab" or "buzz-lang"
@@ -19,7 +18,7 @@ From: {{ DOCKER_BASE }}
   ORG_ARGOS=ilpincy
   ORG_ARGOS_EXAMPLES=NA
   ORG_KHEPERAIV=ilpincy
-  ORG_BUZZ=dcat52
+  ORG_BUZZ=buzz-lang
   ORG_VICON=NA
 
   # GIT HASHES
@@ -43,8 +42,10 @@ From: {{ DOCKER_BASE }}
   PACKAGES=/user-packages
 
   # defaults to "/usr/local"
-  INSTALL_PREFIX=/user-packages/local/
+  INSTALL_PREFIX=/usr/local
   #"/user-packages/local"
+
+  SSH_KEY_PATH=
 
 # ===================================
 # ===================================
@@ -62,14 +63,22 @@ From: {{ DOCKER_BASE }}
 
 %environment
   export PATH={{ INSTALL_PREFIX }}/bin/:$PATH
-  export LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
+#   export LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
   export INSTALL_PREFIX={{ INSTALL_PREFIX }}
   export CMAKE_INCLUDE_PATH={{ INSTALL_PREFIX }}
   export BUILD_TYPE={{ BUILD_TYPE }}
   export PACKAGES={{ PACKAGES }}
 
-%test
-  argos3 -q all
+# %test
+#   argos3 -q all
+
+# %setup
+#   echo $PWD
+#   tar -C /home/davis/Research/repositories/ -czf repositories.tar.gz .
+#   mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
+
+# %files
+#   repositories.tar.gz {{ PACKAGES }}/
 
 %runscript
   cmd=argos3
@@ -77,6 +86,9 @@ From: {{ DOCKER_BASE }}
   $cmd $arg
 
 %post
+
+  LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
+
   abc() {
     echo "$1 $2"
   }
@@ -100,6 +112,11 @@ From: {{ DOCKER_BASE }}
 
     if test -z "$DIR" ; then
       DIR=$REPO
+    fi
+
+    if [ "$ORG" = "local" ]; then
+      cd $DIR
+      return
     fi
 
     git clone https://github.com/$ORG/$REPO.git $DIR
@@ -132,26 +149,26 @@ From: {{ DOCKER_BASE }}
   }
   
   # give user rw permissions over created files/dirs. Change to 002 for r-x.
-#   umask 000
+  umask 000
 
   PACKAGES={{ PACKAGES }}
 
-  mkdir $PACKAGES
+  mkdir -p $PACKAGES
   cd $PACKAGES
   
   export DEBIAN_FRONTEND=noninteractive
 
   apt-get -y update
-  apt-get -y install git bc gdb
+  apt-get -y install git bc gdb tree
 
-  if ! dfx_string_contains {DOCKER_BASE} dcat52; then
+  if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
     # pre-reqs only need installed if not preinstalled n the container
     apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
       freeglut3-dev libxi-dev libxmu-dev build-essential
   fi
 
   # this pre-req will require python
-  apt-get install -q -y qt5-default
+  apt-get install -q -y qt5-default python3-pip
 
   if [ "{{ BUILD_LUA }}" = "ON" ]; then
     apt-get install -q -y liblua5.3-dev lua5.3
@@ -161,8 +178,10 @@ From: {{ DOCKER_BASE }}
     apt-get install -q -y doxygen asciidoc graphviz libgraphviz-dev
   fi
 
-  # install argos3
   cd $PACKAGES
+
+#   tar -xzf repositories.tar.gz
+#   rm -rf repositories.tar.gz
   
   dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
 
@@ -279,6 +298,11 @@ From: {{ DOCKER_BASE }}
     make install
     ldconfig
   fi
+
+  cd $PACKAGES
+  dfx_clone_and_checkout davis/updates NESTLab Hive-Experiments
+  cd Hive-Experiments
+  mkdir build
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

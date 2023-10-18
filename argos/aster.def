@@ -45,7 +45,7 @@ From: {{ DOCKER_BASE }}
   INSTALL_PREFIX=/user-packages/local/
   #"/user-packages/local/"
 
-  SSH_KEY_PATH=../.ssh/id_rsa
+  SSH_KEY_PATH=/home/davis/.ssh/id_rsa
 
 # ===================================
 # ===================================

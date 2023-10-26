@@ -42,10 +42,10 @@ From: {{ DOCKER_BASE }}
   PACKAGES=/user-packages
 
   # defaults to "/usr/local/"
-  INSTALL_PREFIX=/user-packages/local/
+  INSTALL_PREFIX=/usr/local/
   #"/user-packages/local/"
 
-  SSH_KEY_PATH=/home/davis/.ssh/id_rsa
+  SSH_KEY_PATH=/home/davis/.ssh/id_ed25519
 
 # ===================================
 # ===================================
@@ -81,7 +81,7 @@ From: {{ DOCKER_BASE }}
 #   repositories.tar.gz {{ PACKAGES }}/
 
 %files
-  {{ SSH_KEY_PATH }} /id_rsa
+  {{ SSH_KEY_PATH }} /sshkey
 
 %runscript
   cmd=argos3
@@ -312,15 +312,16 @@ From: {{ DOCKER_BASE }}
   ldconfig
 
   mkdir /root/.ssh/
-  cp /id_rsa ~/.ssh/id_rsa
+  cp /sshkey ~/.ssh/sshkey
   eval `ssh-agent`
-  ssh-add ~/.ssh/id_rsa
+  ssh-add ~/.ssh/sshkey
 
 #   ssh-keyscan cra.com >> ~/.ssh/known_hosts
 
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
   cd caf-cpp
+#   git fetch origin pull/7/head:main
   mkdir build
   cd build
   cmake \
@@ -331,16 +332,16 @@ From: {{ DOCKER_BASE }}
   make install
   ldconfig
 
-  cd $PACKAGES
-  git clone ssh://git@git.collab.cra.com:7999/aster/aster-integration.git
-  cd aster-integration
-  mkdir build
-  cd build
-  cmake \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-    ../src
-  make -j {{ NUM_BUILD_THREADS }}
+#   cd $PACKAGES
+#   git clone ssh://git@git.collab.cra.com:7999/aster/aster-integration.git
+#   cd aster-integration
+#   mkdir build
+#   cd build
+#   cmake \
+#     -DCMAKE_BUILD_TYPE=Debug \
+#     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
+#     ../src
+#   make -j {{ NUM_BUILD_THREADS }}
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

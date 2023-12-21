@@ -1,0 +1,155 @@
+Bootstrap: docker
+From: ubuntu:16.04
+
+%labels
+  AUTHOR dscatherman@wpi.edu
+  VERSION v0.1
+  NAME argos_kheperaiv_crosscompiler
+
+%help
+  TODO
+  Add execution instructions. Reference need to provide directory.
+  Reference default BUILD_FOR is "khiv"
+  Example CMake command for a feature:
+    `cmake -DARGOS_BUILD_FOR=\$BUILD_FOR -DCMAKE_INSTALL_PREFIX=\$ARGOS3KHIV ..`
+
+%environment
+  . /opt/poky/1.8/environment-setup-cortexa8hf-vfp-neon-poky-linux-gnueabi
+  export ARGOS3KHIV=/opt/poky/1.8/sysroots/cortexa8hf-vfp-neon-poky-linux-gnueabi/usr
+  export BASH_ENV=/opt/poky/1.8/environment-setup-cortexa8hf-vfp-neon-poky-linux-gnueabi
+  export PACKAGES=/user-packages
+  export BUILD_FOR="khiv"
+
+%test
+  # Do Nothing
+
+%runscript
+  echo "\
+    \nRunning now, here are some reminders: \
+    \n    Default BUILD_FOR is \"khiv\", overridable. \
+    \n    Default CMake cmd is: cmake -DARGOS_BUILD_FOR=\$BUILD_FOR -DCMAKE_INSTALL_PREFIX=\$ARGOS3KHIV
+    \n    Pass any desired cmake arguments and the directory.\n"
+
+  echo "\nSTATUS: Running cmake now!\n"
+  cmake -DARGOS_BUILD_FOR=$BUILD_FOR -DCMAKE_INSTALL_PREFIX=$ARGOS3KHIV "$@"
+  echo "\nSTATUS: Running make now!\n"
+  make
+  echo "\nSTATUS: Done!\n"
+
+%startscript
+  # Do Nothing
+  
+%files
+  poky-glibc-*.sh /.
+  libkhepera-*.tar.bz2 /.
+
+%post
+  # give user rwx permissions over created files/dirs. Change to 002 for r-x.
+  umask 000
+
+  PACKAGES=/user-packages
+  mkdir -p $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  # File source locations:
+  #   https://ftp.k-team.com/KheperaIV/software/Gumstix%20COM%20Y/light_tools/
+  #   https://ftp.k-team.com/KheperaIV/software/Gumstix%20COM%20Y/library/
+  # Downloading:
+  #   wget https://ftp.k-team.com/KheperaIV/software/Gumstix%20COM%20Y/light_tools/poky-glibc-i686-khepera4-image-cortexa8hf-vfp-neon-toolchain-1.8.sh
+  #   wget https://ftp.k-team.com/KheperaIV/software/Gumstix%20COM%20Y/library/libkhepera-2.1.tar.bz2
+  
+  mv /poky-glibc-*.sh /user-packages/.
+  mv /libkhepera-*.tar.bz2 /user-packages/.
+
+%post
+  cd $PACKAGES
+  
+  # Install needed packages
+  apt update -yq
+  apt -yq install \
+    build-essential \
+    bzip2 \
+    cmake \
+    cmake-curses-gui \
+    dnsutils \
+    emacs-nox \
+    git \
+    net-tools \
+    python
+
+  # Install light toolchain
+  chmod +x $PACKAGES/poky-glibc-*.sh
+  printf '\n\n' | bash $PACKAGES/poky-glibc-*.sh
+  
+  . /opt/poky/1.8/environment-setup-cortexa8hf-vfp-neon-poky-linux-gnueabi
+
+  ls /opt/poky/1.8/
+  
+
+  cd $PACKAGES
+
+  # Install libkhepera
+  ARGOS3KHIV=/opt/poky/1.8/sysroots/cortexa8hf-vfp-neon-poky-linux-gnueabi/usr
+  tar xjf $PACKAGES/libkhepera-*.tar.bz2
+  rm -f $PACKAGES/libkhepera-*.tar.bz2
+  cd $PACKAGES/libkhepera-*
+  make
+  mkdir -p $ARGOS3KHIV
+  cd $PACKAGES/libkhepera-*
+  cp -a build*/* $ARGOS3KHIV
+
+%post
+  cd $PACKAGES
+  
+  # Get ARGoS and Buzz code
+  git clone https://github.com/ilpincy/argos3
+  git clone https://github.com/NESTLab/Buzz.git buzz
+  git clone https://github.com/ilpincy/argos3-kheperaiv
+
+  # Make sure the toolchain configuration is in the environment
+  BASH_ENV=/opt/poky/1.8/environment-setup-cortexa8hf-vfp-neon-poky-linux-gnueabi
+  
+  # Compile and install ARGoS
+  cd $PACKAGES/argos3
+  mkdir build_kheperaiv
+  cd build_kheperaiv
+  cmake \
+    -DARGOS_BUILD_FOR=khiv \
+    -DCMAKE_TOOLCHAIN_FILE=../../argos3-kheperaiv/src/cmake/TargetKheperaIV.cmake \
+    -DCMAKE_INSTALL_PREFIX=$ARGOS3KHIV \
+    ../src
+  make install
+
+  # Compile and install Buzz
+  cd $PACKAGES/buzz
+  mkdir build_kheperaiv
+  cd build_kheperaiv
+  cmake \
+    -DARGOS_BUILD_FOR=khiv \
+    -DCMAKE_TOOLCHAIN_FILE=../../argos3-kheperaiv/src/cmake/TargetKheperaIV.cmake \
+    -DCMAKE_INSTALL_PREFIX=$ARGOS3KHIV \
+    ../src
+  make install
+
+  # Compile and install ARGoS-KheperaIV
+  cd $PACKAGES/argos3-kheperaiv
+  mkdir build_kheperaiv
+  cd build_kheperaiv
+  cmake \
+    -DARGOS_BUILD_FOR=khiv \
+    -DCMAKE_TOOLCHAIN_FILE=../src/cmake/TargetKheperaIV.cmake \
+    -DCMAKE_INSTALL_PREFIX=$ARGOS3KHIV \
+    -DKHEPERAIV_LIBS=$ARGOS3KHIV \
+    ../src
+  make install
+
+# === Cleanup setup ===
+%post
+  # add created on info to label
+  DT=`date`
+  echo "CREATED_ON $DT" >> "$APPTAINER_LABELS"
+
+  # store packages directory for future use
+  echo "export PACKAGES=$PACKAGES" >> $APPTAINER_ENVIRONMENT

@@ -1,0 +1,46 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%arguments
+  VERSION=v0.1
+  PACKAGES=/user-packages
+
+%labels
+  AUTHOR daviscatherman@gmail.com
+  VERSION {{ VERSION }}
+  NAME pico_toolchain
+
+%environment
+  export PACKAGES={{ PACKAGES }}
+  export PICO_SDK_PATH={{ PACKAGES }}/pico-sdk/
+
+%runscript
+  export PICO_SDK_PATH=../../pico-sdk/
+  echo "\nSTATUS: Running cmake now!\n"
+  cmake -DPICO_BOARD=pico_w "$@"
+  echo "\nSTATUS: Running make now!\n"
+  make
+  echo "\nSTATUS: Done!\n"
+
+%post -c /bin/bash
+
+  # give user permissions over created files/dirs (possibly of interest 002)
+  umask 000
+
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt -q -y update
+
+  apt install -q -y git cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
+  apt install -q -y python3 python3-pip
+
+  PACKAGES={{ PACKAGES }}
+  mkdir -p $PACKAGES
+  cd $PACKAGES
+
+  git clone https://github.com/raspberrypi/pico-sdk.git
+
+  cd pico-sdk
+  git submodule update --init
+
+  export PICO_SDK_PATH=$PACKAGES/pico-sdk/

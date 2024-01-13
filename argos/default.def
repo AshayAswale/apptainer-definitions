@@ -298,11 +298,6 @@ From: {{ DOCKER_BASE }}
     make install
     ldconfig
   fi
-
-  cd $PACKAGES
-  dfx_clone_and_checkout davis/updates NESTLab Hive-Experiments
-  cd Hive-Experiments
-  mkdir build
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

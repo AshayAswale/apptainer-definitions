@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+# === Setup general requirements ===
+%arguments
+
+  # SSH_AUTH_SOCK=
+  # Note:
+  #   FATAL...build var SSH_AUTH_SOCK is not defined...
+  #   You must pass this with the build command:
+  #     --build-arg SSH_AUTH_SOCK=$SSH_AUTH_SOCK
+
+%post
+
+  PACKAGES=/user-packages
+  mkdir $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  export SSH_AUTH_SOCK={{ SSH_AUTH_SOCK }}
+
+  apt update -qy
+  apt install -qy git
+  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
+%post
+
+  cd $PACKAGES
+  git clone git@github.com:dcat52/apptainer-definitions.git definitions

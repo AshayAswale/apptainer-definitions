@@ -45,8 +45,8 @@ From: {{ DOCKER_BASE }}
   INSTALL_PREFIX=/usr/local/
   #"/user-packages/local/"
 
-  PATCH_FILE=/home/davis/remove_random_device.patch
-  SSH_KEY_PATH=/home/davis/.ssh/id_ed25519
+#   PATCH_FILE=/home/davis/remove_random_device.patch
+#   SSH_KEY_PATH=/home/davis/.ssh/id_ed25519
 
 # ===================================
 # ===================================
@@ -81,8 +81,8 @@ From: {{ DOCKER_BASE }}
 # %files
 #   repositories.tar.gz {{ PACKAGES }}/
 
-%files
-  {{ SSH_KEY_PATH }} /sshkey
+# %files
+#   {{ SSH_KEY_PATH }} /sshkey
 #   {{ PATCH_FILE }} /caf-cpp.patch
 
 %runscript
@@ -160,26 +160,29 @@ From: {{ DOCKER_BASE }}
   
   export DEBIAN_FRONTEND=noninteractive
 
-  apt-get -y update
-  apt-get -y install git bc gdb tree
+  export SSH_AUTH_SOCK={{ SSH_AUTH_SOCK }}
 
-  apt-get install -y cmake-curses-gui
+  apt -qy update
+  apt -qy install git bc gdb tree
+  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
+  apt install -qy cmake-curses-gui
 
   if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
     # pre-reqs only need installed if not preinstalled n the container
-    apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
+    apt install -qy cmake libfreeimage-dev libfreeimageplus-dev \
       freeglut3-dev libxi-dev libxmu-dev build-essential
   fi
 
   # this pre-req will require python
-  apt-get install -q -y qt5-default python3-pip
+  apt install -qy qt5-default python3-pip
 
   if [ "{{ BUILD_LUA }}" = "ON" ]; then
-    apt-get install -q -y liblua5.3-dev lua5.3
+    apt install -qy liblua5.3-dev lua5.3
   fi
 
   if [ "{{ BUILD_DOC }}" = "ON" ]; then
-    apt-get install -q -y doxygen asciidoc graphviz libgraphviz-dev
+    apt install -qy doxygen asciidoc graphviz libgraphviz-dev
   fi
 
   cd $PACKAGES
@@ -191,7 +194,7 @@ From: {{ DOCKER_BASE }}
 
   if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
     cmake \
-      -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
       -DARGOS_DOCUMENTATION={{ BUILD_DOC }} \
       -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
@@ -223,7 +226,7 @@ From: {{ DOCKER_BASE }}
     cd build
     if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
         cmake \
-          -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+          -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
           -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
           ..
@@ -246,7 +249,7 @@ From: {{ DOCKER_BASE }}
   
     if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
       cmake \
-        -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
         ../src
@@ -273,7 +276,7 @@ From: {{ DOCKER_BASE }}
 
     if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
       cmake \
-        -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
         ../src
@@ -309,20 +312,13 @@ From: {{ DOCKER_BASE }}
   mkdir build_sim
   cd build_sim
   cmake \
-    -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
     ../src
   make -j {{ NUM_BUILD_THREADS }}
   make install
   ldconfig
-
-  mkdir /root/.ssh/
-  cp /sshkey ~/.ssh/sshkey
-  eval `ssh-agent`
-  ssh-add ~/.ssh/sshkey
-
-#   ssh-keyscan cra.com >> ~/.ssh/known_hosts
 
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
@@ -332,7 +328,7 @@ From: {{ DOCKER_BASE }}
   mkdir build
   cd build
   cmake \
-    -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
     ..
@@ -340,24 +336,25 @@ From: {{ DOCKER_BASE }}
   make install
   ldconfig
 
-#   cd $PACKAGES
-#   git clone ssh://git@git.collab.cra.com:7999/aster/aster-integration.git
-#   cd aster-integration
-#   mkdir build
-#   cd build
-#   cmake \
-#     -DCMAKE_BUILD_TYPE=Debug \
-#     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-#     ../src
-#   make -j {{ NUM_BUILD_THREADS }}
+  # To build aster-integration
+  # mdkir build
+  # cd build
+  # cmake \
+  #     -DCMAKE_CXX_FLAGS="-DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+  #     -DCMAKE_BUILD_TYPE=Debug \
+  #     -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+  #     ../src
+  # make -j 8
+  # cd ..
+  # argos3 -c src/experiments/<config>.argos
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
   # empty the cache to reduce image size
-  # apt-get clean
+  # apt clean
 
   # Do not forget to clear the ssh keys you added
-#   rm -r ~/.ssh
+  export SSH_AUTH_SOCK=""
 
   # add created on info to label
   DT=`date`

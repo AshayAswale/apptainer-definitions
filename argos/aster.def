@@ -17,8 +17,8 @@ From: {{ DOCKER_BASE }}
 
   ORG_ARGOS=ilpincy
   ORG_ARGOS_EXAMPLES=NA
-  ORG_KHEPERAIV=ilpincy
-  ORG_BUZZ=buzz-lang
+  ORG_KHEPERAIV=NA
+  ORG_BUZZ=NA
   ORG_VICON=NA
 
   # GIT HASHES
@@ -123,6 +123,8 @@ From: {{ DOCKER_BASE }}
 
     git clone https://github.com/$ORG/$REPO.git $DIR
     cd $DIR
+
+    git fetch --all
     
     if [ "$HASH" = "latest" ]; then
       HASH=`git rev-parse --short HEAD`
@@ -162,28 +164,39 @@ From: {{ DOCKER_BASE }}
 
   export SSH_AUTH_SOCK={{ SSH_AUTH_SOCK }}
 
-  apt -qy update
+  apt -y update
   apt -qy install git bc gdb tree
   export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
 
-  apt install -qy cmake-curses-gui
+  apt -qy install cmake-curses-gui
 
   if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
     # pre-reqs only need installed if not preinstalled n the container
-    apt install -qy cmake libfreeimage-dev libfreeimageplus-dev \
+    apt -qy install cmake libfreeimage-dev libfreeimageplus-dev \
       freeglut3-dev libxi-dev libxmu-dev build-essential
   fi
 
   # this pre-req will require python
-  apt install -qy qt5-default python3-pip
+  apt -qy install qt5-default python3-pip
 
   if [ "{{ BUILD_LUA }}" = "ON" ]; then
-    apt install -qy liblua5.3-dev lua5.3
+    apt -qy install liblua5.3-dev lua5.3
   fi
 
   if [ "{{ BUILD_DOC }}" = "ON" ]; then
-    apt install -qy doxygen asciidoc graphviz libgraphviz-dev
+    apt -qy install doxygen asciidoc graphviz libgraphviz-dev
   fi
+
+  apt -qy install curl lsb-release lsb-core
+  sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+  curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+  apt -qy update
+  apt -qy install ros-noetic-ros-comm ros-noetic-geometry-msgs
+
+  source /opt/ros/noetic/setup.bash
+
+
+
 
   cd $PACKAGES
   
@@ -308,7 +321,7 @@ From: {{ DOCKER_BASE }}
   fi
 
   cd $PACKAGES
-  dfx_clone_and_checkout latest ilpincy argos3-leo
+  dfx_clone_and_checkout ros-actuator ilpincy argos3-leo
   mkdir build_sim
   cd build_sim
   cmake \
@@ -323,8 +336,6 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
   cd caf-cpp
-#   git apply /caf-cpp.patch
-#   git fetch origin pull/7/head:main
   mkdir build
   cd build
   cmake \

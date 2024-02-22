@@ -1,0 +1,44 @@
+Bootstrap: docker
+From: ros:noetic
+
+%post
+
+  PACKAGES=/user-packages
+  mkdir $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt update -qy
+  apt install -qy git
+  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
+  apt install -qy tmux
+
+%post
+
+  cd $PACKAGES
+  
+  apt install -qy python3-rosdep python3-catkin-tools
+
+  apt install -qy ros-noetic-joy
+  apt install -qy ros-noetic-teleop-twist-joy
+  apt install -qy ros-noetic-teleop-twist-keyboard
+  apt install -qy ros-noetic-robot-state-publisher
+  apt install -qy ros-noetic-joint-state-publisher
+  apt install -qy ros-noetic-joint-state-publisher-gui
+  apt install -qy ros-noetic-rviz
+  apt install -qy ros-noetic-xacro
+  apt install -qy ros-noetic-leo-description
+  apt install -qy ros-noetic-gazebo-ros
+  apt install -qy ros-noetic-leo
+  apt install -qy ros-noetic-gazebo-ros-control
+  apt install -qy ros-noetic-gazebo-plugins
+  apt install -qy ros-noetic-controller-manager
+  apt install -qy ros-noetic-joint-state-controller
+  apt install -qy ros-noetic-diff-drive-controller
+  apt install -qy ros-noetic-compressed-image-transport
+  apt install -qy ros-noetic-rtabmap-ros
+  apt install -qy ros-noetic-tf2-ros
+  apt install -qy python3-pykdl
+  apt install -qy ros-noetic-leo-gazebo-plugins

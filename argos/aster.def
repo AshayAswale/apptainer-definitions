@@ -347,6 +347,14 @@ From: {{ DOCKER_BASE }}
   make install
   ldconfig
 
+  cd $PACKAGES
+  dfx_clone_and_checkout v3.11.3 nlohmann json
+  mkdir build
+  cd build
+  cmake ..
+  make -j {{ NUM_BUILD_THREADS }}
+  make install
+  
   # To build aster-integration
   # mdkir build
   # cd build

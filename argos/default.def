@@ -45,7 +45,7 @@ From: {{ DOCKER_BASE }}
   INSTALL_PREFIX=/usr/local
   #"/user-packages/local"
 
-  SSH_KEY_PATH=
+  SSH_AUTH_SOCk=
 
 # ===================================
 # ===================================
@@ -158,24 +158,26 @@ From: {{ DOCKER_BASE }}
   
   export DEBIAN_FRONTEND=noninteractive
 
-  apt-get -y update
-  apt-get -y install git bc gdb tree
+  export SSH_AUTH_SOCK={{ SSH_AUTH_SOCK }}
+
+  apt update -y
+  apt install -qy git bc gdb tree
 
   if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
     # pre-reqs only need installed if not preinstalled n the container
-    apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
+    apt install -qy cmake libfreeimage-dev libfreeimageplus-dev \
       freeglut3-dev libxi-dev libxmu-dev build-essential
   fi
 
   # this pre-req will require python
-  apt-get install -q -y qt5-default python3-pip
+  apt install -qy qt5-default python3-pip
 
   if [ "{{ BUILD_LUA }}" = "ON" ]; then
-    apt-get install -q -y liblua5.3-dev lua5.3
+    apt install -qy liblua5.3-dev lua5.3
   fi
 
   if [ "{{ BUILD_DOC }}" = "ON" ]; then
-    apt-get install -q -y doxygen asciidoc graphviz libgraphviz-dev
+    apt install -qy doxygen asciidoc graphviz libgraphviz-dev
   fi
 
   cd $PACKAGES
@@ -302,7 +304,10 @@ From: {{ DOCKER_BASE }}
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
   # empty the cache to reduce image size
-  # apt-get clean
+  # apt clean
+
+  # Do not forget to clear the ssh keys you added
+  export SSH_AUTH_SOCK=""
 
   # add created on info to label
   DT=`date`

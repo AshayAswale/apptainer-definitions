@@ -5,29 +5,28 @@ From: {{ DOCKER_BASE }}
 # === Manually configurable setup ===
 %arguments
 
-  VERSION=v0.9
+  VERSION=v0.10
 
   DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
 
   NUM_BUILD_THREADS=20
 
   # REPO SOURCE ORGS
-
   # commonly "ilpincy" or "NESTLab" or "buzz-lang"
-
   ORG_ARGOS=ilpincy
-  ORG_ARGOS_EXAMPLES=NA
+  ORG_ARGOS_EXAMPLES=ilpincy
+  ORG_BUZZ=NESTLab
   ORG_KHEPERAIV=ilpincy
-  ORG_BUZZ=buzz-lang
+  ORG_WEBVIZ=NESTLab
   ORG_VICON=NA
 
   # GIT HASHES
-
   # use "latest" for most recent commit
   HASH_ARGOS=latest
   HASH_ARGOS_EXAMPLES=latest
   HASH_BUZZ=latest
   HASH_KHEPERAIV=latest
+  HASH_WEBVIZ=feature/update-cmake
   HASH_VICON=latest
   
   # use "Debug" or "Release"
@@ -45,13 +44,13 @@ From: {{ DOCKER_BASE }}
   INSTALL_PREFIX=/usr/local
   #"/user-packages/local"
 
-  SSH_AUTH_SOCk=
+  SSH_AUTH_SOCK=
 
 # ===================================
 # ===================================
 
 %labels
-  AUTHOR dscatherman@wpi.edu
+  AUTHOR daviscatherman@gmail.com
   VERSION {{ VERSION }}
   NAME argos
 
@@ -63,22 +62,14 @@ From: {{ DOCKER_BASE }}
 
 %environment
   export PATH={{ INSTALL_PREFIX }}/bin/:$PATH
-#   export LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
   export INSTALL_PREFIX={{ INSTALL_PREFIX }}
   export CMAKE_INCLUDE_PATH={{ INSTALL_PREFIX }}
   export BUILD_TYPE={{ BUILD_TYPE }}
   export PACKAGES={{ PACKAGES }}
 
-# %test
-#   argos3 -q all
-
-# %setup
-#   echo $PWD
-#   tar -C /home/davis/Research/repositories/ -czf repositories.tar.gz .
-#   mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
-
-# %files
-#   repositories.tar.gz {{ PACKAGES }}/
+%test
+  argos3 -q all
 
 %runscript
   cmd=argos3
@@ -172,6 +163,8 @@ From: {{ DOCKER_BASE }}
   # this pre-req will require python
   apt install -qy qt5-default python3-pip
 
+  apt install -qy zlib1g-dev libssl-dev
+
   if [ "{{ BUILD_LUA }}" = "ON" ]; then
     apt install -qy liblua5.3-dev lua5.3
   fi
@@ -181,9 +174,6 @@ From: {{ DOCKER_BASE }}
   fi
 
   cd $PACKAGES
-
-#   tar -xzf repositories.tar.gz
-#   rm -rf repositories.tar.gz
   
   dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
 
@@ -289,6 +279,23 @@ From: {{ DOCKER_BASE }}
 
   cd $PACKAGES
 
+  dfx_clone_and_checkout {{ HASH_WEBVIZ }} {{ ORG_WEBVIZ }} argos3-webviz
+  
+  if [ ! "{{ ORG_WEBVIZ }}" = "NA" ]; then
+    mkdir build
+    cd build
+
+    cmake \
+       -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
+       ../src
+
+    make -j {{ NUM_BUILD_THREADS }}
+    make install
+    ldconfig
+  fi
+
+  cd $PACKAGES
+
   dfx_clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
   
   if [ ! "{{ ORG_VICON }}" = "NA" ]; then
@@ -306,9 +313,6 @@ From: {{ DOCKER_BASE }}
   # empty the cache to reduce image size
   # apt clean
 
-  # Do not forget to clear the ssh keys you added
-  export SSH_AUTH_SOCK=""
-
   # add created on info to label
   DT=`date`
   echo CREATED_ON $DT >> "$APPTAINER_LABELS"
@@ -325,8 +329,12 @@ From: {{ DOCKER_BASE }}
   echo _ORG_ARGOS_EXAMPLES {{ ORG_ARGOS_EXAMPLES }} >> "$APPTAINER_LABELS"
   echo _ORG_BUZZ {{ ORG_BUZZ }} >> "$APPTAINER_LABELS"
   echo _ORG_KHEPERAIV {{ ORG_KHEPERAIV }} >> "$APPTAINER_LABELS"
+  echo _ORG_WEBVIZ {{ ORG_WEBVIZ }} >> "$APPTAINER_LABELS"
+  echo _ORG_VICON {{ ORG_VICON }} >> "$APPTAINER_LABELS"
   
   echo _HASH_ARGOS {{ HASH_ARGOS }} >> "$APPTAINER_LABELS"
   echo _HASH_ARGOS_EXAMPLES {{ HASH_ARGOS_EXAMPLES }} >> "$APPTAINER_LABELS"
   echo _HASH_BUZZ {{ HASH_BUZZ }} >> "$APPTAINER_LABELS"
   echo _HASH_KHEPERAIV {{ HASH_KHEPERAIV }} >> "$APPTAINER_LABELS"
+  echo _HASH_WEBVIZ {{ HASH_WEBVIZ }} >> "$APPTAINER_LABELS"
+  echo _HASH_VICON {{ HASH_VICON }} >> "$APPTAINER_LABELS"

@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+# === Setup general requirements ===
+%arguments
+
+%setup
+  echo $PWD
+  tar -C {{ REPO_PATH }} -czf repository.tar.gz .
+  mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
+
+%files
+  repository.tar.gz {{ PACKAGES }}/
+
+%post
+
+  PACKAGES=/user-packages
+  mkdir $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt update -qy
+  apt install -qy git
+  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
+  cd $PACKAGES
+  tar -xzvf repository.tar.gz
+
+  ls -la .

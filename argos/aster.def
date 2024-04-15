@@ -5,7 +5,7 @@ From: {{ DOCKER_BASE }}
 # === Manually configurable setup ===
 %arguments
 
-  VERSION=v0.10
+  VERSION=v0.11
 
   DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
 
@@ -17,7 +17,7 @@ From: {{ DOCKER_BASE }}
   ORG_ARGOS_EXAMPLES=NA
   ORG_BUZZ=NA
   ORG_KHEPERAIV=NA
-  ORG_WEBVIZ=NESTLab
+  ORG_WEBVIZ=NA
   ORG_VICON=NA
 
   # GIT HASHES
@@ -66,80 +66,16 @@ From: {{ DOCKER_BASE }}
   export BUILD_TYPE={{ BUILD_TYPE }}
   export PACKAGES={{ PACKAGES }}
 
-%test
-  argos3 -q all
-
 %setup
   mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
-
-%runscript
-  cmd=argos3
-  arg="$@"
-  $cmd $arg
+  . definitions/include/helper.sh
+  add_helper
+  add_bashrc
+  add_sshauthsock
 
 %post -c /bin/bash
-  abc() {
-    echo "$1 $2"
-  }
-
-  # ARG: HASH of commit to checkout (or latest)
-  # ARG: ORG of repository
-  # ARG: REPO repository to clone
-  # ARG: DIR desired path name for cloned repository (if any)
-  # IMPACTS: new folder
-  # IMPACTS: PWD
-  dfx_clone_and_checkout() {
-    echo $1 $2 $3 $4
-    HASH=$1
-    ORG=$2
-    REPO=$3
-    DIR=$4
-
-    if [ "$ORG" = "NA" ]; then
-      return
-    fi
-
-    if test -z "$DIR" ; then
-      DIR=$REPO
-    fi
-
-    if [ "$ORG" = "local" ]; then
-      cd $DIR
-      return
-    fi
-
-    git clone https://github.com/$ORG/$REPO.git $DIR
-    cd $DIR
-
-    git fetch --all
-    
-    if [ "$HASH" = "latest" ]; then
-      HASH=`git rev-parse --short HEAD`
-    else
-      git checkout $HASH
-    fi
-  }
-
-  # ARG: path for directory to be made
-  # IMPACTS: PWD
-  dfx_make_dir_and_cd() {
-    mkdir $1
-    cd $1
-  }
-
-  # ARG: string to search within
-  # ARG: string to find
-  # RETURN: 1 if in string
-  dfx_string_contains() {
-    echo $1
-    echo $2
-    if printf '%s\n' "$1" | grep -Fqe "$2"; then
-      return 1
-    fi
-    return 
-  }
+  . /.singularity.d/env/90-bashrc.sh
   
-  # give user permissions over created files/dirs (possibly of interest 002)
   umask 000
 
   PACKAGES={{ PACKAGES }}
@@ -148,8 +84,6 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
   
   export DEBIAN_FRONTEND=noninteractive
-
-  export SSH_AUTH_SOCK={{ SSH_AUTH_SOCK }}
 
   apt update -y
   apt install -qy git bc gdb tree
@@ -182,7 +116,8 @@ From: {{ DOCKER_BASE }}
   apt -qy update
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs
 
-  source /opt/ros/noetic/setup.bash
+  . /opt/ros/noetic/setup.sh
+  addto_bashrc ". /opt/ros/noetic/setup.sh"
 
 
   cd $PACKAGES
@@ -301,18 +236,10 @@ From: {{ DOCKER_BASE }}
     mkdir build
     cd build
 
-    if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
-      cmake \
-        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
-        -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-        ../src
-    elif [ "{{ BUILD_TYPE }}" = "Release" ]; then
-      cmake \
-        -DCMAKE_BUILD_TYPE=Release  \
-        -DARGOS_FORCE_NO_QTOPENGL=ON \
-        -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-        ../src
-    fi
+    cmake \
+      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
+      ../src
 
     make -j {{ NUM_BUILD_THREADS }}
     make install
@@ -364,21 +291,12 @@ From: {{ DOCKER_BASE }}
   dfx_clone_and_checkout v3.11.3 nlohmann json
   mkdir build
   cd build
-  cmake ..
+  cmake \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
+    ..
   make -j {{ NUM_BUILD_THREADS }}
   make install
-  
-  # To build aster-integration
-  # mdkir build
-  # cd build
-  # cmake \
-  #     -DCMAKE_CXX_FLAGS="-DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
-  #     -DCMAKE_BUILD_TYPE=Debug \
-  #     -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-  #     ../src
-  # make -j 8
-  # cd ..
-  # argos3 -c src/experiments/<config>.argos
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

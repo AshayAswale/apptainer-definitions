@@ -5,7 +5,7 @@ From: {{ DOCKER_BASE }}
 # === Manually configurable setup ===
 %arguments
 
-  VERSION=v0.10
+  VERSION=v0.11
 
   DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
 
@@ -44,8 +44,6 @@ From: {{ DOCKER_BASE }}
   INSTALL_PREFIX=/usr/local
   #"/user-packages/local"
 
-  SSH_AUTH_SOCK=
-
 # ===================================
 # ===================================
 
@@ -71,75 +69,23 @@ From: {{ DOCKER_BASE }}
 %test
   argos3 -q all
 
+%setup
+  mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
+  . definitions/include/helper.sh
+  add_helper
+  add_bashrc
+  add_sshauthsock
+
 %runscript
   cmd=argos3
   arg="$@"
   $cmd $arg
 
-%post
+%post -c /bin/bash
+  . /.singularity.d/env/90-bashrc.sh
 
   LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
-
-  abc() {
-    echo "$1 $2"
-  }
-
-  # ARG: HASH of commit to checkout (or latest)
-  # ARG: ORG of repository
-  # ARG: REPO repository to clone
-  # ARG: DIR desired path name for cloned repository (if any)
-  # IMPACTS: new folder
-  # IMPACTS: PWD
-  dfx_clone_and_checkout() {
-    echo $1 $2 $3 $4
-    HASH=$1
-    ORG=$2
-    REPO=$3
-    DIR=$4
-
-    if [ "$ORG" = "NA" ]; then
-      return
-    fi
-
-    if test -z "$DIR" ; then
-      DIR=$REPO
-    fi
-
-    if [ "$ORG" = "local" ]; then
-      cd $DIR
-      return
-    fi
-
-    git clone https://github.com/$ORG/$REPO.git $DIR
-    cd $DIR
-    
-    if [ "$HASH" = "latest" ]; then
-      HASH=`git rev-parse --short HEAD`
-    else
-      git checkout $HASH
-    fi
-  }
-
-  # ARG: path for directory to be made
-  # IMPACTS: PWD
-  dfx_make_dir_and_cd() {
-    mkdir $1
-    cd $1
-  }
-
-  # ARG: string to search within
-  # ARG: string to find
-  # RETURN: 1 if in string
-  dfx_string_contains() {
-    echo $1
-    echo $2
-    if printf '%s\n' "$1" | grep -Fqe "$2"; then
-      return 1
-    fi
-    return 
-  }
   
-  # give user rw permissions over created files/dirs. Change to 002 for r-x.
   umask 000
 
   PACKAGES={{ PACKAGES }}
@@ -148,8 +94,6 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
   
   export DEBIAN_FRONTEND=noninteractive
-
-  export SSH_AUTH_SOCK={{ SSH_AUTH_SOCK }}
 
   apt update -y
   apt install -qy git bc gdb tree

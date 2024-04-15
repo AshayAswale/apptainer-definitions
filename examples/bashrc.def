@@ -1,0 +1,16 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%setup
+  . definitions/include/helper.sh
+  add_helper
+  add_bashrc
+  add_sshauthsock
+
+%post -c /bin/bash
+  . /.singularity.d/env/90-bashrc.sh
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt update -y
+  apt install -qy git bc gdb tree

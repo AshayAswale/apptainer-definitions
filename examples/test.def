@@ -1,0 +1,14 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%setup
+  # give user permissions over created files/dirs (possibly of interest 002)
+  umask 000
+  . definitions/include/helper.sh
+  add_helper
+  add_bashrc
+  add_sshauthsock
+
+%post
+  . /.singularity.d/env/90-bashrc.sh
+  dfx_make_dir_and_cd myDir

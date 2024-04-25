@@ -28,6 +28,7 @@ From: {{ DOCKER_BASE }}
   HASH_KHEPERAIV=latest
   HASH_WEBVIZ=feature/update-cmake
   HASH_VICON=latest
+  HASH_CAFCPP=latest
   
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
@@ -276,6 +277,13 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
   cd caf-cpp
+  git fetch --all
+  HASH_CAFCPP={{ HASH_CAFCPP }}
+  if [ "$HASH_CAFCPP" = "latest" ]; then
+    HASH_CAFCPP=`git rev-parse --short HEAD`
+  else
+    git checkout $HASH_CAFCPP
+  fi
   mkdir build
   cd build
   cmake \

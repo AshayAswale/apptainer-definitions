@@ -11,17 +11,19 @@ dfx_clone_and_checkout() {
    REPO=$3
    DIR=$4
 
+   DEFAULT_URL=github.com
+
    if [ "$ORG" = "NA" ]; then
-   return
+     return
    fi
 
    if test -z "$DIR" ; then
-   DIR=$REPO
+      DIR=$REPO
    fi
 
    if [ "$ORG" = "local" ]; then
-   cd $DIR
-   return
+      cd $DIR
+      return
    fi
 
    git clone https://github.com/$ORG/$REPO.git $DIR
@@ -30,9 +32,9 @@ dfx_clone_and_checkout() {
    git fetch --all
    
    if [ "$HASH" = "latest" ]; then
-   HASH=`git rev-parse --short HEAD`
+      HASH=`git rev-parse --short HEAD`
    else
-   git checkout $HASH
+      git checkout $HASH
    fi
 }
 
@@ -50,7 +52,7 @@ dfx_string_contains() {
    echo $1
    echo $2
    if printf '%s\n' "$1" | grep -Fqe "$2"; then
-   return 1
+      return 1
    fi
    return 
 }

@@ -87,11 +87,10 @@ From: {{ DOCKER_BASE }}
   export DEBIAN_FRONTEND=noninteractive
 
   apt update -y
-  apt install -qy git bc gdb tree
+  apt install -qy git bc gdb tree cmake-curses-gui
+  
   export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-
-  apt install -qy cmake-curses-gui
-
+  
   if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
     # pre-reqs only need installed if not preinstalled n the container
     apt install -qy cmake libfreeimage-dev libfreeimageplus-dev \
@@ -118,7 +117,7 @@ From: {{ DOCKER_BASE }}
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs
 
   . /opt/ros/noetic/setup.sh
-  addto_bashrc ". /opt/ros/noetic/setup.sh"
+  # addto_bashrc ". /opt/ros/noetic/setup.sh"
 
 
   cd $PACKAGES
@@ -274,6 +273,7 @@ From: {{ DOCKER_BASE }}
   make install
   ldconfig
 
+  set -x
   cd $PACKAGES
   git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
   cd caf-cpp
@@ -285,6 +285,7 @@ From: {{ DOCKER_BASE }}
     git checkout $HASH_CAFCPP
   fi
   mkdir build
+  set +x
   cd build
   cmake \
     -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \

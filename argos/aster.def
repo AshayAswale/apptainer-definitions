@@ -88,6 +88,7 @@ From: {{ DOCKER_BASE }}
 
   apt update -y
   apt install -qy git bc gdb tree cmake-curses-gui
+  apt install -qy vim
   
   export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
   
@@ -119,7 +120,6 @@ From: {{ DOCKER_BASE }}
   . /opt/ros/noetic/setup.sh
   # addto_bashrc ". /opt/ros/noetic/setup.sh"
 
-
   cd $PACKAGES
   
   dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
@@ -129,7 +129,7 @@ From: {{ DOCKER_BASE }}
 
   if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
     cmake \
-      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
       -DCMAKE_BUILD_TYPE=Debug \
       -DARGOS_DOCUMENTATION={{ BUILD_DOC }} \
       -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
@@ -161,7 +161,7 @@ From: {{ DOCKER_BASE }}
     cd build
     if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
         cmake \
-          -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+          -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
           -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
           ..
@@ -184,7 +184,7 @@ From: {{ DOCKER_BASE }}
   
     if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
       cmake \
-        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
         ../src
@@ -211,7 +211,7 @@ From: {{ DOCKER_BASE }}
 
     if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
       cmake \
-        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
         ../src
@@ -237,7 +237,7 @@ From: {{ DOCKER_BASE }}
     cd build
 
     cmake \
-      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
       -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
       ../src
 
@@ -265,7 +265,7 @@ From: {{ DOCKER_BASE }}
   mkdir build_sim
   cd build_sim
   cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
     ../src
@@ -288,7 +288,7 @@ From: {{ DOCKER_BASE }}
   set +x
   cd build
   cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
     ..
@@ -301,11 +301,51 @@ From: {{ DOCKER_BASE }}
   mkdir build
   cd build
   cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
+    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DJSON_BuildTests=Off \
+    ..
+  make -j {{ NUM_BUILD_THREADS }}
+  make install
+
+  cd $PACKAGES
+#   dfx_clone_and_checkout 3.4 libeigen eigen
+  git clone https://gitlab.com/libeigen/eigen.git
+  cd eigen
+  git fetch --all
+  HASH_EIGEN=3.4 
+  if [ "$HASH_EIGEN" = "latest" ]; then
+    HASH_EIGEN=`git rev-parse --short HEAD`
+  else
+    git checkout $HASH_EIGEN
+  fi
+#   cd eigen
+  mkdir build
+  cd build
+  cmake \
+    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
     ..
   make -j {{ NUM_BUILD_THREADS }}
   make install
+  ldconfig
+  
+
+#   cd $PACKAGES
+#   dfx_clone_and_checkout main NESTLab MultiRobotTaskAllocation
+#   cd MultiRobotTaskAllocation
+#   mkdir build
+#   cd build
+#   cmake \
+#     -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
+#     -DCMAKE_BUILD_TYPE=Debug \
+#     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
+#     ..
+#   make -j {{ NUM_BUILD_THREADS }}
+#   make install
+#   ldconfig
   
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

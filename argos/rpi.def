@@ -1,0 +1,52 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%labels
+  AUTHOR daviscatherman@gmail.com
+  VERSION v0.1
+  NAME rpi_crosscompiler
+
+%environment
+  export PACKAGES=/packages
+  export ARGOS_BUILD_FOR="rpi"
+
+%post
+  umask 000
+
+  PACKAGES=/packages
+  mkdir -p $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  cd $PACKAGES
+  
+  # Install needed packages
+  apt update -yq
+  apt -yq install \
+    build-essential \
+    bzip2 \
+    cmake \
+    cmake-curses-gui \
+    dnsutils \
+    emacs-nox \
+    git \
+    net-tools \
+    python
+
+  apt -yq install gcc-aarch64-linux-gnu
+
+%post
+  cd $PACKAGES
+  
+  git clone https://github.com/ilpincy/argos3
+  
+  # Compile and install ARGoS
+  cd $PACKAGES/argos3
+  mkdir build
+  cd build
+  cmake \
+    -DARGOS_BUILD_FOR=rpi \
+    --toolchain /packages/x-tools/armv8-rpi3-linux-gnueabihf/aarch64-rpi4-linux-gnueabihf.toolchain.cmake \
+    ../src
+  make install

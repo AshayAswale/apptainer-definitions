@@ -11,6 +11,9 @@ dfx_clone_and_checkout() {
    REPO=$3
    DIR=$4
 
+   echo "DEPRECATED! Use dfx_git_clone_adv"
+
+
    DEFAULT_URL=github.com
 
    if [ "$ORG" = "NA" ]; then
@@ -38,6 +41,69 @@ dfx_clone_and_checkout() {
    fi
 }
 
+# example usage:
+# dfx_git_clone_adv org=dcat52 repo=apptainer-definitions dir=definitions hash=latest
+dfx_git_clone_adv() {
+   echo "Params: $@"
+
+   for arg in "$@" ; do
+      eval $arg
+   done
+
+   if test -z "$url" ; then
+      address="https://github.com/$org/$repo.git"
+   else
+      address="https://$url/$org/$repo.git"
+   fi
+
+   if test -z "$dir" ; then
+      dir=$repo
+   fi
+
+   if [ "$org" = "NA" ]; then
+      return
+   elif [ "$org" = "local" ]; then
+      cd $dir
+   else
+      git clone $address $dir
+      cd $dir
+   fi
+
+   git fetch --all
+
+   if test -z "$hash" ; then
+      hash="latest"
+   fi
+   
+   if [ "$hash" = "latest" ]; then
+      hash=`git rev-parse --short HEAD`
+   else
+      git checkout $hash
+   fi
+
+
+}
+
+dfx_make_build() {
+   echo "Params: $@"
+
+   for arg in "$@" ; do
+      eval $arg
+   done
+
+   if [ "$org" = "NA" ]; then
+      return
+   fi
+
+   mkdir $dir
+   cd $dir
+   cmake $cmake_args $src
+   make -j $(( $(nproc) - 2 ))
+   make install
+   ldconfig
+
+}
+
 # ARG: path for directory to be made
 # IMPACTS: PWD
 dfx_make_dir_and_cd() {
@@ -49,12 +115,24 @@ dfx_make_dir_and_cd() {
 # ARG: string to find
 # RETURN: 1 if in string
 dfx_string_contains() {
-   echo $1
-   echo $2
-   if printf '%s\n' "$1" | grep -Fqe "$2"; then
+   echo "checking $1 =? $2"
+   # if printf '%s\n' "$1" | grep -Fqe "$2"; then
+   if [[ $1 == *"$2"* ]]; then
       return 1
    fi
-   return 
+   return 0
+}
+
+# ARG: string to search within
+# ARG: string to find
+# RETURN: 1 if not in string
+dfx_string_not_contains() {
+   echo "checking $1 =? $2"
+   # if printf '%s\n' "$1" | grep -Fqe "$2"; then
+   if [[ $1 != *"$2"* ]]; then
+      return 0
+   fi
+   return 1
 }
 
 # IMPACTS: /.singularity.d/*

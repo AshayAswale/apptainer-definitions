@@ -39,11 +39,11 @@ From: {{DOCKER_BASE}}
   FORCE_NO_QT=OFF
   ARGOS_INSTALL_LDSOCONF=ON
 
-  PACKAGES=/user-packages
+  PACKAGES=/packages
 
   # defaults to "/usr/local"
   INSTALL_PREFIX=/usr/local
-  #"/user-packages/local"
+  #"/packages/local"
 
 # ===================================
 # ===================================
@@ -76,11 +76,6 @@ From: {{DOCKER_BASE}}
   add_helper
   add_bashrc
   add_sshauthsock
-
-%runscript
-  cmd=argos3
-  arg="$@"
-  $cmd $arg
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
@@ -121,7 +116,7 @@ From: {{DOCKER_BASE}}
   cd $PACKAGES
 
   dfx_git_clone_adv org={{ORG_ARGOS}} repo=argos3 hash={{HASH_ARGOS}}
-  cmake_args="
+  export cmake_args="
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               -DARGOS_DOCUMENTATION={{BUILD_DOC}} 

@@ -53,7 +53,7 @@ dfx_git_clone_adv() {
    if test -z "$url" ; then
       address="https://github.com/$org/$repo.git"
    else
-      address="https://$url/$org/$repo.git"
+      address="$url/$org/$repo.git"
    fi
 
    if test -z "$dir" ; then
@@ -85,7 +85,7 @@ dfx_git_clone_adv() {
 }
 
 dfx_make_build() {
-   echo "Params: $@"
+   echo Params: "$@"
 
    for arg in "$@" ; do
       eval $arg

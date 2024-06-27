@@ -5,7 +5,7 @@ From: {{ DOCKER_BASE }}
 # === Manually configurable setup ===
 %arguments
 
-  VERSION=v0.11
+  VERSION=v0.12
 
   DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
 
@@ -37,13 +37,14 @@ From: {{ DOCKER_BASE }}
   BUILD_DOC=OFF
   BUILD_LUA=OFF
   BUILD_NATIVE=OFF
+  FORCE_NO_QT=OFF
   ARGOS_INSTALL_LDSOCONF=ON
 
-  PACKAGES=/user-packages
+  PACKAGES=/packages
 
   # defaults to "/usr/local/"
-  INSTALL_PREFIX=/usr/local/
-  #"/user-packages/local/"
+  INSTALL_PREFIX=/packages/local/
+  #"/packages/local/"
 
 # ===================================
 # ===================================
@@ -76,6 +77,8 @@ From: {{ DOCKER_BASE }}
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
+
+  LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   
   umask 000
 
@@ -91,8 +94,8 @@ From: {{ DOCKER_BASE }}
   apt install -qy vim
   
   export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-  
-  if ! dfx_string_contains {{ DOCKER_BASE }} dcat52; then
+
+  if dfx_string_not_contains {{DOCKER_BASE}} dcat52; then
     # pre-reqs only need installed if not preinstalled n the container
     apt install -qy cmake libfreeimage-dev libfreeimageplus-dev \
       freeglut3-dev libxi-dev libxmu-dev build-essential
@@ -112,7 +115,7 @@ From: {{ DOCKER_BASE }}
   fi
 
   apt install -qy curl lsb-release lsb-core
-  sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+  sh -c \"echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list\"
   curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
   apt -qy update
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs
@@ -121,232 +124,84 @@ From: {{ DOCKER_BASE }}
   # addto_bashrc ". /opt/ros/noetic/setup.sh"
 
   cd $PACKAGES
+
+  dfx_git_clone_adv org={{ORG_ARGOS}} repo=argos3 hash={{HASH_ARGOS}}
   
-  dfx_clone_and_checkout {{ HASH_ARGOS }} {{ ORG_ARGOS }} argos3
-
-  mkdir build_simulator
-  cd build_simulator
-
-  if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
-    cmake \
-      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-      -DCMAKE_BUILD_TYPE=Debug \
-      -DARGOS_DOCUMENTATION={{ BUILD_DOC }} \
-      -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-      ../src
-  elif [ "{{ BUILD_TYPE }}" = "Release" ]; then
-    cmake \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DARGOS_FORCE_NO_QTOPENGL=ON \
-      -DARGOS_DOCUMENTATION={{ BUILD_DOC }} \
-      -DARGOS_INSTALL_LDSOCONF={{ ARGOS_INSTALL_LDSOCONF }} \
-      -DARGOS_BUILD_NATIVE={{ BUILD_NATIVE }} \
-      -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-      ../src
-  fi
-
-  make -j {{ NUM_BUILD_THREADS }}
-  if [ "{{ BUILD_DOC }}" = "ON" ]; then
-    make doc
-  fi
-  make install
-  ldconfig
+  export cmake_args="
+              -DCMAKE_CXX_FLAGS=-fno-omit-frame-pointer -fsanitize=address 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              -DARGOS_DOCUMENTATION={{BUILD_DOC}} 
+              -DARGOS_BUILD_NATIVE={{BUILD_NATIVE}} 
+              -DARGOS_INSTALL_LDSOCONF={{ARGOS_INSTALL_LDSOCONF}} 
+              -DARGOS_FORCE_NO_QTOPENGL={{FORCE_NO_QT}}
+              "
+  dfx_make_build \
+    ignore={{ORG_ARGOS}} \
+    dir=build_simulator \
+    src=../src
 
   cd $PACKAGES
 
-  dfx_clone_and_checkout {{ HASH_ARGOS_EXAMPLES }} {{ ORG_ARGOS_EXAMPLES }} argos3-examples
-  
-  if [ ! "{{ ORG_ARGOS_EXAMPLES }}" = "NA" ]; then
-    mkdir build
-    cd build
-    if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
-        cmake \
-          -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-          -DCMAKE_BUILD_TYPE=Debug \
-          -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-          ..
-    elif [ "{{ BUILD_TYPE }}" = "Release" ]; then
-        cmake \
-          -DCMAKE_BUILD_TYPE=Release  \
-          -DARGOS_FORCE_NO_QTOPENGL=ON \
-          -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-          ..
-    fi
-    make -j {{ NUM_BUILD_THREADS }}
-  fi
-
-  cd $PACKAGES
-  dfx_clone_and_checkout {{ HASH_BUZZ }} {{ ORG_BUZZ }} Buzz buzz
-  
-  if [ ! "{{ ORG_BUZZ }}" = "NA" ]; then
-    mkdir build
-    cd build
-  
-    if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
-      cmake \
-        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-        ../src
-    elif [ "{{ BUILD_TYPE }}" = "Release" ]; then
-      cmake \
-        -DCMAKE_BUILD_TYPE=Release  \
-        -DARGOS_FORCE_NO_QTOPENGL=ON \
-        -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-        ../src
-    fi
-  
-    make -j {{ NUM_BUILD_THREADS }}
-    make install
-    ldconfig
-  fi
+  dfx_git_clone_adv org=ilpincy repo=argos3-leo hash=latest
+  export cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              " 
+  dfx_make_build \
+    ignore=ilpincy \
+    dir=build_sim \
+    src=../src
 
   cd $PACKAGES
 
-  dfx_clone_and_checkout {{ HASH_KHEPERAIV }} {{ ORG_KHEPERAIV }} argos3-kheperaiv
-  
-  if [ ! "{{ ORG_KHEPERAIV }}" = "NA" ]; then
-    mkdir build_sim
-    cd build_sim
-
-    if [ "{{ BUILD_TYPE }}" = "Debug" ]; then
-      cmake \
-        -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-        ../src
-    elif [ "{{ BUILD_TYPE }}" = "Release" ]; then
-      cmake \
-        -DCMAKE_BUILD_TYPE=Release  \
-        -DARGOS_FORCE_NO_QTOPENGL=ON \
-        -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-        ../src
-    fi
-
-    make -j {{ NUM_BUILD_THREADS }}
-    make install
-    ldconfig
-  fi
+  dfx_git_clone_adv url=ssh://git@git.collab.cra.com:7999 org=aster repo=caf-cpp hash=latest
+  export cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              " 
+  dfx_make_build \
+    ignore=aster \
+    dir=build \
+    src=..
 
   cd $PACKAGES
 
-  dfx_clone_and_checkout {{ HASH_WEBVIZ }} {{ ORG_WEBVIZ }} argos3-webviz
-  
-  if [ ! "{{ ORG_WEBVIZ }}" = "NA" ]; then
-    mkdir build
-    cd build
-
-    cmake \
-      -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-      -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-      ../src
-
-    make -j {{ NUM_BUILD_THREADS }}
-    make install
-    ldconfig
-  fi
+  dfx_git_clone_adv org=nlohmann repo=json hash=v3.11.3
+  export cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              -DJSON_BuildTests=Off 
+              "
+  dfx_make_build \
+    ignore=nlohmann \
+    dir=build \
+    src=..
 
   cd $PACKAGES
 
-  dfx_clone_and_checkout {{ HASH_VICON }} {{ ORG_VICON }} Vicon vicon
-  
-  if [ ! "{{ ORG_VICON }}" = "NA" ]; then
-    mkdir build
-    cd build
-    cmake ..
-  
-    make -j {{ NUM_BUILD_THREADS }}
-    make install
-    ldconfig
-  fi
+  dfx_git_clone_adv org=libeigen repo=eigen hash=3.4
+  export cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              "
+  dfx_make_build \
+    ignore=libeigen \
+    dir=build \
+    src=..
 
   cd $PACKAGES
-  dfx_clone_and_checkout ros-actuator ilpincy argos3-leo
-  mkdir build_sim
-  cd build_sim
-  cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-    ../src
-  make -j {{ NUM_BUILD_THREADS }}
-  make install
-  ldconfig
 
-  set -x
-  cd $PACKAGES
-  git clone ssh://git@git.collab.cra.com:7999/aster/caf-cpp.git
-  cd caf-cpp
-  git fetch --all
-  HASH_CAFCPP={{ HASH_CAFCPP }}
-  if [ "$HASH_CAFCPP" = "latest" ]; then
-    HASH_CAFCPP=`git rev-parse --short HEAD`
-  else
-    git checkout $HASH_CAFCPP
-  fi
-  mkdir build
-  set +x
-  cd build
-  cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-    ..
-  make -j {{ NUM_BUILD_THREADS }}
-  make install
-  ldconfig
+  dfx_git_clone_adv org=NESTLab repo=MultiRobotTaskAllocation hash=latest
+  export cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              "
+  dfx_make_build \
+    ignore=NESTLab \
+    dir=build \
+    src=..
 
-  cd $PACKAGES
-  dfx_clone_and_checkout v3.11.3 nlohmann json
-  mkdir build
-  cd build
-  cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DJSON_BuildTests=Off \
-    ..
-  make -j {{ NUM_BUILD_THREADS }}
-  make install
-
-  cd $PACKAGES
-#   dfx_clone_and_checkout 3.4 libeigen eigen
-  git clone https://gitlab.com/libeigen/eigen.git
-  cd eigen
-  git fetch --all
-  HASH_EIGEN=3.4 
-  if [ "$HASH_EIGEN" = "latest" ]; then
-    HASH_EIGEN=`git rev-parse --short HEAD`
-  else
-    git checkout $HASH_EIGEN
-  fi
-#   cd eigen
-  mkdir build
-  cd build
-  cmake \
-    -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address,undefined,function,alignment,integer " \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-    ..
-  make -j {{ NUM_BUILD_THREADS }}
-  make install
-  ldconfig
-  
-
-#   cd $PACKAGES
-#   dfx_clone_and_checkout main NESTLab MultiRobotTaskAllocation
-#   cd MultiRobotTaskAllocation
-#   mkdir build
-#   cd build
-#   cmake \
-#     -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address " \
-#     -DCMAKE_BUILD_TYPE=Debug \
-#     -DCMAKE_INSTALL_PREFIX={{ INSTALL_PREFIX }} \
-#     ..
-#   make -j {{ NUM_BUILD_THREADS }}
-#   make install
-#   ldconfig
-  
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
   # empty the cache to reduce image size
@@ -355,18 +210,3 @@ From: {{ DOCKER_BASE }}
   # add created on info to label
   DT=`date`
   echo CREATED_ON $DT >> "$APPTAINER_LABELS"
-
-  # store the build type into a label
-  echo _BUILD_TYPE {{ BUILD_TYPE }} >>  "$APPTAINER_LABELS"
-  # store whether build native into a label
-  echo _BUILD_NATIVE {{ BUILD_NATIVE }} >>  "$APPTAINER_LABELS"
-  # store whether build doc into a label
-  echo _BUILD_DOC {{ BUILD_DOC }} >>  "$APPTAINER_LABELS"
-
-  # store the git hashes into labels
-  echo _ORG_ARGOS {{ ORG_ARGOS }} >> "$APPTAINER_LABELS"
-  echo _ORG_ARGOS_EXAMPLES {{ ORG_ARGOS_EXAMPLES }} >> "$APPTAINER_LABELS"
-  echo _ORG_BUZZ {{ ORG_BUZZ }} >> "$APPTAINER_LABELS"
-  echo _ORG_KHEPERAIV {{ ORG_KHEPERAIV }} >> "$APPTAINER_LABELS"
-  echo _ORG_WEBVIZ {{ ORG_WEBVIZ }} >> "$APPTAINER_LABELS"
-  echo _ORG_VICON {{ ORG_VICON }} >> "$APPTAINER_LABELS"

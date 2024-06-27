@@ -14,4 +14,7 @@ ENV LC_ALL en_US.UTF-8
 RUN apt-get -q -y install git bc gdb
 RUN apt-get install -q -y cmake libfreeimage-dev libfreeimageplus-dev \
     freeglut3-dev libxi-dev libxmu-dev build-essential
+
+RUN apt-get -q -y upgrade
+
 RUN apt-get clean

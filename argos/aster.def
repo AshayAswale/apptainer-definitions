@@ -156,7 +156,7 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
 
   dfx_git_clone_adv url=ssh://git@git.collab.cra.com:7999 org=aster repo=caf-cpp hash=latest
-  export cmake_args=" 
+  cmake_args=" 
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               " 
@@ -168,7 +168,7 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
 
   dfx_git_clone_adv org=nlohmann repo=json hash=v3.11.3
-  export cmake_args=" 
+  cmake_args=" 
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               -DJSON_BuildTests=Off 
@@ -181,7 +181,7 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
 
   dfx_git_clone_adv org=libeigen repo=eigen hash=3.4
-  export cmake_args=" 
+  cmake_args=" 
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               "
@@ -193,7 +193,7 @@ From: {{ DOCKER_BASE }}
   cd $PACKAGES
 
   dfx_git_clone_adv org=NESTLab repo=MultiRobotTaskAllocation hash=latest
-  export cmake_args=" 
+  cmake_args=" 
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               "

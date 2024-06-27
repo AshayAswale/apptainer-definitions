@@ -116,7 +116,7 @@ From: {{DOCKER_BASE}}
   cd $PACKAGES
 
   dfx_git_clone_adv org={{ORG_ARGOS}} repo=argos3 hash={{HASH_ARGOS}}
-  export cmake_args="
+  cmake_args="
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               -DARGOS_DOCUMENTATION={{BUILD_DOC}} 
@@ -141,7 +141,11 @@ From: {{DOCKER_BASE}}
   cd $PACKAGES
 
   dfx_git_clone_adv org={{ORG_BUZZ}} repo=Buzz hash={{HASH_BUZZ}} dir=buzz
-  cmake_args="-DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}}"
+  cmake_args="
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              -DARGOS_FORCE_NO_QTOPENGL={{FORCE_NO_QT}} 
+              "
   dfx_make_build \
     ignore={{ORG_BUZZ}} \
     dir=build \

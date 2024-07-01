@@ -154,16 +154,14 @@ From: {{DOCKER_BASE}}
   cd $PACKAGES
 
   dfx_git_clone_adv org={{ORG_KHEPERAIV}} repo=argos3-kheperaiv hash={{HASH_KHEPERAIV}}
-  cmake_args="-DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}}"
   dfx_make_build \
     ignore={{ORG_KHEPERAIV}} \
-    dir=build_sim \
+    dir=build \
     src=../src
 
   cd $PACKAGES
 
   dfx_git_clone_adv org={{ORG_WEBVIZ}} repo=argos3-webviz hash={{HASH_WEBVIZ}}
-  cmake_args="-DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}}"
   dfx_make_build \
     ignore={{ORG_WEBVIZ}} \
     dir=build \
@@ -172,7 +170,6 @@ From: {{DOCKER_BASE}}
   cd $PACKAGES
 
   dfx_git_clone_adv org={{ORG_VICON}} repo=Vicon hash={{HASH_VICON}} vicon
-  cmake_args="-DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}}"
   dfx_make_build \
     ignore={{ORG_VICON}} \
     dir=build \

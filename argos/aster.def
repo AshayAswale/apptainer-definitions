@@ -40,10 +40,10 @@ From: {{ DOCKER_BASE }}
   FORCE_NO_QT=OFF
   ARGOS_INSTALL_LDSOCONF=ON
 
-  PACKAGES=/packages
+  PACKAGES=/packages/
 
   # defaults to "/usr/local/"
-  INSTALL_PREFIX=/packages/local/
+  INSTALL_PREFIX=/usr/local/
   #"/packages/local/"
 
 # ===================================
@@ -61,15 +61,15 @@ From: {{ DOCKER_BASE }}
   View the Labels to see the configuration used of the built container.
 
 %environment
-  export PATH={{ INSTALL_PREFIX }}/bin/:$PATH
-  export LD_LIBRARY_PATH={{ INSTALL_PREFIX }}/lib/:$LD_LIBRARY_PATH
-  export INSTALL_PREFIX={{ INSTALL_PREFIX }}
-  export CMAKE_INCLUDE_PATH={{ INSTALL_PREFIX }}
-  export BUILD_TYPE={{ BUILD_TYPE }}
-  export PACKAGES={{ PACKAGES }}
+  export PATH={{INSTALL_PREFIX}}/bin/:$PATH
+  export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  export INSTALL_PREFIX={{INSTALL_PREFIX}}
+  export CMAKE_INCLUDE_PATH={{INSTALL_PREFIX}}
+  export BUILD_TYPE={{BUILD_TYPE}}
+  export PACKAGES={{PACKAGES}}
 
 %setup
-  mkdir -p ${APPTAINER_ROOTFS}/{{ PACKAGES }}
+  mkdir -p ${APPTAINER_ROOTFS}/{{PACKAGES}}
   . definitions/include/helper.sh
   add_helper
   add_bashrc
@@ -82,7 +82,7 @@ From: {{ DOCKER_BASE }}
   
   umask 000
 
-  PACKAGES={{ PACKAGES }}
+  PACKAGES={{PACKAGES}}
 
   mkdir -p $PACKAGES
   cd $PACKAGES
@@ -115,10 +115,10 @@ From: {{ DOCKER_BASE }}
   fi
 
   apt install -qy curl lsb-release lsb-core
-  sh -c \"echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list\"
+  echo -e "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
   curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
   apt -qy update
-  apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs
+  apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs ros-noetic-nav-msgs
 
   . /opt/ros/noetic/setup.sh
   # addto_bashrc ". /opt/ros/noetic/setup.sh"
@@ -143,64 +143,70 @@ From: {{ DOCKER_BASE }}
 
   cd $PACKAGES
 
-  dfx_git_clone_adv org=ilpincy repo=argos3-leo hash=latest
+  echo $PWD
+
+  cd $PACKAGES
+  
+  echo $PWD
+
+  dfx_git_clone_adv org=ilpincy repo="argos3-leo" hash=feature/robot-compilation dir=argos3-leo
   export cmake_args=" 
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               " 
   dfx_make_build \
     ignore=ilpincy \
-    dir=build_sim \
+    dir=build \
     src=../src
 
   cd $PACKAGES
 
-  dfx_git_clone_adv url=ssh://git@git.collab.cra.com:7999 org=aster repo=caf-cpp hash=latest
-  cmake_args=" 
-              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-              " 
-  dfx_make_build \
-    ignore=aster \
-    dir=build \
-    src=..
+#   dfx_git_clone_adv url=ssh://git@git.collab.cra.com:7999 org=aster repo=caf-cpp hash=latest
+#   cmake_args=" 
+#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+#               " 
+#   dfx_make_build \
+#     ignore=aster \
+#     dir=build \
+#     src=..
 
-  cd $PACKAGES
+#   cd $PACKAGES
 
-  dfx_git_clone_adv org=nlohmann repo=json hash=v3.11.3
-  cmake_args=" 
-              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-              -DJSON_BuildTests=Off 
-              "
-  dfx_make_build \
-    ignore=nlohmann \
-    dir=build \
-    src=..
+#   dfx_git_clone_adv org=nlohmann repo=json hash=v3.11.3
+#   cmake_args=" 
+#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+#               -DJSON_BuildTests=Off 
+#               "
+#   dfx_make_build \
+#     ignore=nlohmann \
+#     dir=build \
+#     src=..
 
-  cd $PACKAGES
+#   cd $PACKAGES
 
-  dfx_git_clone_adv org=libeigen repo=eigen hash=3.4
-  cmake_args=" 
-              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-              "
-  dfx_make_build \
-    ignore=libeigen \
-    dir=build \
-    src=..
+#   dfx_git_clone_adv org=libeigen repo=eigen hash=3.4
+#   cmake_args=" 
+#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+#               "
+#   dfx_make_build \
+#     ignore=libeigen \
+#     dir=build \
+#     src=..
 
-  cd $PACKAGES
+#   cd $PACKAGES
 
-  dfx_git_clone_adv org=NESTLab repo=MultiRobotTaskAllocation hash=latest
-  cmake_args=" 
-              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-              "
-  dfx_make_build \
-    ignore=NESTLab \
-    dir=build \
-    src=..
+#   dfx_git_clone_adv org=NESTLab repo=MultiRobotTaskAllocation hash=latest
+#   cmake_args=" 
+#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+#               "
+#   dfx_make_build \
+#     ignore=NESTLab \
+#     dir=build \
+#     src=..
 
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

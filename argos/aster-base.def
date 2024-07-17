@@ -5,27 +5,20 @@ From: {{DOCKER_BASE}}
 # === Manually configurable setup ===
 %arguments
 
-  VERSION=v0.12
+  VERSION=v0.14
 
   DOCKER_BASE=ubuntu:20.04
 
-  NUM_BUILD_THREADS=20
+  NUM_BUILD_THREADS=4
 
   # GIT HASHES
   # use "latest" for most recent commit
   HASH_JSON=v3.11.3
   HASH_EIGEN=3.4
-  
-  # use "Debug" or "Release"
-  BUILD_TYPE=Debug
 
   # use "OFF" or "ON"
   BUILD_DOC=OFF
   BUILD_LUA=OFF
-
-  # defaults to "/usr/local/"
-  INSTALL_PREFIX=/usr/local/
-  #"/packages/local/"
 
 # ===================================
 # ===================================
@@ -44,10 +37,9 @@ From: {{DOCKER_BASE}}
   . /.singularity.d/env/90-bashrc.sh
   . /.singularity.d/env/90-helper.sh
 
-  export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export DEBIAN_FRONTEND=noninteractive
   
-  # umask 000
+  umask 000
 
   PREBUILT=/packages
   mkdir -p $PREBUILT
@@ -83,6 +75,7 @@ From: {{DOCKER_BASE}}
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs ros-noetic-nav-msgs
 
   . /opt/ros/noetic/setup.sh
+  addto_bashrc source /opt/ros/noetic/setup.bash
 
   declare -A repos=(
     ["json"]="https://github.com/nlohmann/json.git"
@@ -123,7 +116,7 @@ From: {{DOCKER_BASE}}
   mkdir build
   cd build
   cmake ..
-  make
+  make -j {{NUM_BUILD_THREADS}}
   make install
   ldconfig
 

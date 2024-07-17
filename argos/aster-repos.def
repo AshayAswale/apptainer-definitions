@@ -9,15 +9,15 @@ From: aster-base.sif
 
   DOCKER_BASE=ubuntu:20.04
 
-  NUM_BUILD_THREADS=20
+  NUM_BUILD_THREADS=28
 
   # GIT HASHES
   # use "latest" for most recent commit
-  HASH_ARGOS=latest
-  HASH_BUZZ=latest
-  HASH_CAFCPP=latest
-  HASH_LEO=feature/robot-compilation
-  HASH_MRTA=latest
+  REBUILD_ARGOS=no
+  REBUILD_BUZZ=yes
+  REBUILD_CAFCPP=yes
+  REBUILD_LEO=yes
+  REBUILD_MRTA=yes
 
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
@@ -53,6 +53,7 @@ From: aster-base.sif
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
   . /.singularity.d/env/90-helper.sh
+  . /opt/ros/noetic/setup.sh
 
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export DEBIAN_FRONTEND=noninteractive
@@ -91,7 +92,7 @@ From: aster-base.sif
         -DARGOS_DOCUMENTATION=OFF \
         -DARGOS_BUILD_FOR=${BUILD_TARGET} \
         ../src
-  make
+  make -j {{NUM_BUILD_THREADS}}
   sudo make install
   sudo ldconfig
 
@@ -106,7 +107,7 @@ From: aster-base.sif
             -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
             -DCMAKE_BUILD_TYPE=Debug \
             ../src
-    make
+    make -j {{NUM_BUILD_THREADS}}
     sudo make install
     sudo ldconfig
   fi
@@ -121,7 +122,7 @@ From: aster-base.sif
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
       ..
-  make
+  make -j {{NUM_BUILD_THREADS}}
   sudo make install
   sudo ldconfig
   
@@ -136,7 +137,7 @@ From: aster-base.sif
       -DCMAKE_BUILD_TYPE=Debug \
       -DARGOS_BUILD_FOR=${BUILD_TARGET} \
       ../src
-  make
+  make -j {{NUM_BUILD_THREADS}}
   sudo make install
   sudo ldconfig
   
@@ -150,7 +151,7 @@ From: aster-base.sif
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
       ..
-  make
+  make -j {{NUM_BUILD_THREADS}}
   sudo make install
   sudo ldconfig
   

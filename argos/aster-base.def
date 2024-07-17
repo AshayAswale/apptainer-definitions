@@ -29,6 +29,7 @@ From: {{DOCKER_BASE}}
   NAME ASTER_environment
 
 %setup
+  # umask 000
   . definitions/include/helper.sh
   add_bashrc
   add_helper
@@ -39,7 +40,7 @@ From: {{DOCKER_BASE}}
 
   export DEBIAN_FRONTEND=noninteractive
   
-  umask 000
+  # umask 000
 
   PREBUILT=/packages
   mkdir -p $PREBUILT
@@ -75,7 +76,6 @@ From: {{DOCKER_BASE}}
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs ros-noetic-nav-msgs
 
   . /opt/ros/noetic/setup.sh
-  addto_bashrc source /opt/ros/noetic/setup.bash
 
   declare -A repos=(
     ["json"]="https://github.com/nlohmann/json.git"

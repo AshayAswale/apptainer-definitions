@@ -177,5 +177,5 @@ add_environment() {
 # }
 
 addto_bashrc() {
-   echo $@ >> /.singularity.d/env/90-bashrc.sh
+   echo "${ARGS}" >> /.singularity.d/env/90-bashrc.sh
 }

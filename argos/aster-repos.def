@@ -37,9 +37,15 @@ From: aster-base.sif
   export BUILD_TYPE={{BUILD_TYPE}}
   export WORKING_DIR={{WORKING_DIR}}
 
+%runscript
+  /bin/bash -rcfile /.singularity.d/env/90-bashrc.sh
+
 %setup
-  umask 000
+  # umask 000
   mkdir -p ${APPTAINER_ROOTFS}/{{WORKING_DIR}}
+  . definitions/include/helper.sh
+  add_bashrc
+  add_helper
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
@@ -49,7 +55,10 @@ From: aster-base.sif
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export DEBIAN_FRONTEND=noninteractive
   
-  umask 000
+  # umask 000
+
+  INSTALL_PREFIX={{INSTALL_PREFIX}}
+  NUM_BUILD_THREADS={{NUM_BUILD_THREADS}}
 
   WORKING_DIR={{WORKING_DIR}}
   cd $WORKING_DIR
@@ -82,10 +91,11 @@ From: aster-base.sif
         -DCMAKE_BUILD_TYPE=Debug \
         -DARGOS_DOCUMENTATION=OFF \
         -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
         ../src
-  make -j {{NUM_BUILD_THREADS}}
-  sudo make install
-  sudo ldconfig
+  make -j ${NUM_BUILD_THREADS}
+  make install
+  ldconfig
 
   cd $WORKING_DIR
   # <clone Buzz repository>
@@ -97,10 +107,12 @@ From: aster-base.sif
     cmake \
             -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+            -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
             ../src
-    make -j {{NUM_BUILD_THREADS}}
-    sudo make install
-    sudo ldconfig
+    make -j ${NUM_BUILD_THREADS}
+    make install
+    ldconfig
   fi
   
   cd $WORKING_DIR
@@ -112,10 +124,11 @@ From: aster-base.sif
   cmake \
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
       ..
-  make -j {{NUM_BUILD_THREADS}}
-  sudo make install
-  sudo ldconfig
+  make -j ${NUM_BUILD_THREADS}
+  make install
+  ldconfig
   
   cd $WORKING_DIR
   # <clone argos3-leo repository>
@@ -127,10 +140,11 @@ From: aster-base.sif
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
       -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+      -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
       ../src
-  make -j {{NUM_BUILD_THREADS}}
-  sudo make install
-  sudo ldconfig
+  make -j ${NUM_BUILD_THREADS}
+  make install
+  ldconfig
   
   cd $WORKING_DIR
   # <clone MultiRobotTaskAllocation repository>
@@ -141,10 +155,11 @@ From: aster-base.sif
   cmake \
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
       ..
-  make -j {{NUM_BUILD_THREADS}}
-  sudo make install
-  sudo ldconfig
+  make -j ${NUM_BUILD_THREADS}
+  make install
+  ldconfig
   
   cd $WORKING_DIR
 
@@ -156,3 +171,6 @@ From: aster-base.sif
   # add created on info to label
   DT=`date`
   echo CREATED_ON $DT >> "$APPTAINER_LABELS"
+
+  ARGS="source /opt/ros/noetic/setup.bash"
+  addto_bashrc

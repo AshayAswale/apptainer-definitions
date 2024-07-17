@@ -7,14 +7,9 @@ From: aster-base.sif
 
   VERSION=v0.12
 
-  DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
+  DOCKER_BASE=ubuntu:20.04
 
   NUM_BUILD_THREADS=20
-
-  # REPO SOURCE ORGS
-  # commonly "ilpincy" or "NESTLab" or "buzz-lang"
-  ORG_ARGOS=ilpincy
-  ORG_BUZZ=NA
 
   # GIT HASHES
   # use "latest" for most recent commit
@@ -23,11 +18,7 @@ From: aster-base.sif
   HASH_CAFCPP=latest
   HASH_LEO=feature/robot-compilation
   HASH_MRTA=latest
-  HASH_JSON=v3.11.3
-  HASH_EIGEN=3.4
 
-
-  
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
 
@@ -38,7 +29,7 @@ From: aster-base.sif
   FORCE_NO_QT=OFF
   ARGOS_INSTALL_LDSOCONF=ON
 
-  PACKAGES=/packages/
+  WORKING_DIR=
 
   # defaults to "/usr/local/"
   INSTALL_PREFIX=/usr/local/
@@ -47,29 +38,29 @@ From: aster-base.sif
 # ===================================
 # ===================================
 
+%environment
+  export PATH={{INSTALL_PREFIX}}/bin/:$PATH
+  export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  export INSTALL_PREFIX={{INSTALL_PREFIX}}
+  export CMAKE_INCLUDE_PATH={{INSTALL_PREFIX}}
+  export BUILD_TYPE={{BUILD_TYPE}}
+  export WORKING_DIR={{WORKING_DIR}}
+
+%setup
+  umask 000
+  mkdir -p ${APPTAINER_ROOTFS}/{{WORKING_DIR}}
+
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
+  . /opt/ros/noetic/setup.sh
 
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  export DEBIAN_FRONTEND=noninteractive
   
   umask 000
 
-  PACKAGES={{PACKAGES}}
-
-  mkdir -p $PACKAGES
-  cd $PACKAGES
-  
-  export DEBIAN_FRONTEND=noninteractive
-  
-  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
-
-  . /opt/ros/noetic/setup.sh
-
-  cxx_flags="'-fno-omit-frame-pointer -fsanitize=address '"
-
-  cd $PACKAGES
-
-  #!/bin/bash
+  WORKING_DIR={{WORKING_DIR}}
+  cd $WORKING_DIR
 
   BUILD_TARGET="simulator"
 
@@ -85,17 +76,15 @@ From: aster-base.sif
     esac
   done
 
+
   echo Building for target "$BUILD_TARGET"
 
-  cd $PACKAGES
-  check_directories=("argos3" "argos3-leo" "json" "caf-cpp" "eigen" "MultiRobotTaskAllocation")
 
+  cd $WORKING_DIR
   cd argos3
-
   [ -d "build_simulator" ] && rm -rf build_simulator
   mkdir build_simulator
   cd build_simulator
-  dfx_checkout_hash {{HASH_ARGOS}}
   cmake \
         -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
         -DCMAKE_BUILD_TYPE=Debug \
@@ -106,11 +95,10 @@ From: aster-base.sif
   sudo make install
   sudo ldconfig
 
-  cd $PACKAGES
+  cd $WORKING_DIR
   # <clone Buzz repository>
   if [ "$BUILD_TARGET" == "simulator" ]; then
     cd Buzz
-    dfx_checkout_hash {{HASH_BUZZ}}
     [ -d "build" ] && rm -rf build
     mkdir build
     cd build
@@ -122,23 +110,10 @@ From: aster-base.sif
     sudo make install
     sudo ldconfig
   fi
-
-  cd $PACKAGES
-  # <clone json repository>
-  cd json
-  dfx_checkout_hash {{HASH_JSON}}
-  [ -d "build" ] && rm -rf build
-  mkdir build
-  cd build
-  cmake -DJSON_BuildTests=OFF ..
-  make
-  sudo make install
-  sudo ldconfig
   
-  cd $PACKAGES
+  cd $WORKING_DIR
   # <clone caf-cpp repository>
   cd caf-cpp
-  dfx_checkout_hash {{HASH_CAFCPP}}
   [ -d "build" ] && rm -rf build
   mkdir build
   cd build
@@ -150,10 +125,9 @@ From: aster-base.sif
   sudo make install
   sudo ldconfig
   
-  cd $PACKAGES
+  cd $WORKING_DIR
   # <clone argos3-leo repository>
   cd argos3-leo
-  dfx_checkout_hash {{HASH_LEO}}
   [ -d "build_sim" ] && rm -rf build_sim
   mkdir build_sim
   cd build_sim
@@ -166,22 +140,9 @@ From: aster-base.sif
   sudo make install
   sudo ldconfig
   
-  cd $PACKAGES
-  # <clone eigen repository>
-  cd eigen
-  dfx_checkout_hash {{HASH_EIGEN}}
-  [ -d "build" ] && rm -rf build
-  mkdir build
-  cd build
-  cmake ..
-  make
-  sudo make install
-  sudo ldconfig
-  
-  cd $PACKAGES
+  cd $WORKING_DIR
   # <clone MultiRobotTaskAllocation repository>
   cd MultiRobotTaskAllocation
-  dfx_checkout_hash {{HASH_MRTA}}
   [ -d "build" ] && rm -rf build
   mkdir build
   cd build
@@ -193,7 +154,7 @@ From: aster-base.sif
   sudo make install
   sudo ldconfig
   
-  cd $PACKAGES
+  cd $WORKING_DIR
 
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

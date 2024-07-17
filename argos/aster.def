@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: {{ DOCKER_BASE }}
+From: {{DOCKER_BASE}} 
 
 # ===================================
 # === Manually configurable setup ===
@@ -76,6 +76,8 @@ From: {{ DOCKER_BASE }}
   add_sshauthsock
 
 %post -c /bin/bash
+
+
   . /.singularity.d/env/90-bashrc.sh
 
   LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
@@ -90,7 +92,7 @@ From: {{ DOCKER_BASE }}
   export DEBIAN_FRONTEND=noninteractive
 
   apt update -y
-  apt install -qy git bc gdb tree cmake-curses-gui
+  apt install -qy git bc gdb tree
   apt install -qy vim
   
   export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
@@ -121,11 +123,12 @@ From: {{ DOCKER_BASE }}
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs ros-noetic-nav-msgs
 
   . /opt/ros/noetic/setup.sh
+  source /opt/ros/noetic/setup.bash
   # addto_bashrc ". /opt/ros/noetic/setup.sh"
 
   cd $PACKAGES
 
-  dfx_git_clone_adv org={{ORG_ARGOS}} repo=argos3 hash={{HASH_ARGOS}}
+  dfx_git_clone_adv org={{ORG_ARGOS}} repo=argos3 hash={{HASH_ARGOS}} dir=argos3
   
   export cmake_args="
               -DCMAKE_CXX_FLAGS=-fno-omit-frame-pointer -fsanitize=address 
@@ -135,21 +138,18 @@ From: {{ DOCKER_BASE }}
               -DARGOS_BUILD_NATIVE={{BUILD_NATIVE}} 
               -DARGOS_INSTALL_LDSOCONF={{ARGOS_INSTALL_LDSOCONF}} 
               -DARGOS_FORCE_NO_QTOPENGL={{FORCE_NO_QT}}
+              -DARGOS_BUILD_FOR=myrobot
               "
   dfx_make_build \
     ignore={{ORG_ARGOS}} \
-    dir=build_simulator \
+    dir=build_leo \
     src=../src
 
   cd $PACKAGES
 
-  echo $PWD
+  set -x
 
-  cd $PACKAGES
-  
-  echo $PWD
-
-  dfx_git_clone_adv org=ilpincy repo="argos3-leo" hash=feature/robot-compilation dir=argos3-leo
+  dfx_git_clone_adv org=ilpincy repo=argos3-leo hash=feature/robot-compilation dir=argos3-leo
   export cmake_args=" 
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
@@ -161,52 +161,54 @@ From: {{ DOCKER_BASE }}
 
   cd $PACKAGES
 
-#   dfx_git_clone_adv url=ssh://git@git.collab.cra.com:7999 org=aster repo=caf-cpp hash=latest
-#   cmake_args=" 
-#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-#               " 
-#   dfx_make_build \
-#     ignore=aster \
-#     dir=build \
-#     src=..
+  exit
 
-#   cd $PACKAGES
+  dfx_git_clone_adv url=ssh://git@git.collab.cra.com:7999 org=aster repo=caf-cpp hash=latest dir=caf-cpp
+  cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              " 
+  dfx_make_build \
+    ignore=aster \
+    dir=build \
+    src=..
 
-#   dfx_git_clone_adv org=nlohmann repo=json hash=v3.11.3
-#   cmake_args=" 
-#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-#               -DJSON_BuildTests=Off 
-#               "
-#   dfx_make_build \
-#     ignore=nlohmann \
-#     dir=build \
-#     src=..
+  cd $PACKAGES
 
-#   cd $PACKAGES
+  dfx_git_clone_adv org=nlohmann repo=json hash=v3.11.3 dir=json
+  cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              -DJSON_BuildTests=Off 
+              "
+  dfx_make_build \
+    ignore=nlohmann \
+    dir=build \
+    src=..
 
-#   dfx_git_clone_adv org=libeigen repo=eigen hash=3.4
-#   cmake_args=" 
-#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-#               "
-#   dfx_make_build \
-#     ignore=libeigen \
-#     dir=build \
-#     src=..
+  cd $PACKAGES
 
-#   cd $PACKAGES
+  dfx_git_clone_adv org=libeigen repo=eigen hash=3.4 dir=eigen url=https://gitlab.com
+  cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              "
+  dfx_make_build \
+    ignore=libeigen \
+    dir=build \
+    src=..
 
-#   dfx_git_clone_adv org=NESTLab repo=MultiRobotTaskAllocation hash=latest
-#   cmake_args=" 
-#               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
-#               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
-#               "
-#   dfx_make_build \
-#     ignore=NESTLab \
-#     dir=build \
-#     src=..
+  cd $PACKAGES
+
+  dfx_git_clone_adv org=NESTLab repo=MultiRobotTaskAllocation hash=latest dir=MultiRobotTaskAllocation
+  cmake_args=" 
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
+              "
+  dfx_make_build \
+    ignore=NESTLab \
+    dir=build \
+    src=..
 
   # remove a section of libQt5 to work on Turing
   strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5

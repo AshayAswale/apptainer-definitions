@@ -1,0 +1,205 @@
+Bootstrap: localimage
+From: aster-base.sif
+
+# ===================================
+# === Manually configurable setup ===
+%arguments
+
+  VERSION=v0.12
+
+  DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
+
+  NUM_BUILD_THREADS=20
+
+  # REPO SOURCE ORGS
+  # commonly "ilpincy" or "NESTLab" or "buzz-lang"
+  ORG_ARGOS=ilpincy
+  ORG_BUZZ=NA
+
+  # GIT HASHES
+  # use "latest" for most recent commit
+  HASH_ARGOS=latest
+  HASH_BUZZ=latest
+  HASH_CAFCPP=latest
+  HASH_LEO=feature/robot-compilation
+  HASH_MRTA=latest
+  HASH_JSON=v3.11.3
+  HASH_EIGEN=3.4
+
+
+  
+  # use "Debug" or "Release"
+  BUILD_TYPE=Debug
+
+  # use "OFF" or "ON"
+  BUILD_DOC=OFF
+  BUILD_LUA=OFF
+  BUILD_NATIVE=OFF
+  FORCE_NO_QT=OFF
+  ARGOS_INSTALL_LDSOCONF=ON
+
+  PACKAGES=/packages/
+
+  # defaults to "/usr/local/"
+  INSTALL_PREFIX=/usr/local/
+  #"/packages/local/"
+
+# ===================================
+# ===================================
+
+%post -c /bin/bash
+  . /.singularity.d/env/90-bashrc.sh
+
+  export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  
+  umask 000
+
+  PACKAGES={{PACKAGES}}
+
+  mkdir -p $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+  
+  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
+  . /opt/ros/noetic/setup.sh
+
+  cxx_flags="'-fno-omit-frame-pointer -fsanitize=address '"
+
+  cd $PACKAGES
+
+  #!/bin/bash
+
+  BUILD_TARGET="simulator"
+
+  while getopts "t:" opt; do
+    case $opt in
+      t)
+        BUILD_TARGET=$OPTARG
+        ;;
+      *)
+        echo "Usage $0 [-t target]"
+        exit 1
+        ;;
+    esac
+  done
+
+  echo Building for target "$BUILD_TARGET"
+
+  cd $PACKAGES
+  check_directories=("argos3" "argos3-leo" "json" "caf-cpp" "eigen" "MultiRobotTaskAllocation")
+
+  cd argos3
+
+  [ -d "build_simulator" ] && rm -rf build_simulator
+  mkdir build_simulator
+  cd build_simulator
+  dfx_checkout_hash {{HASH_ARGOS}}
+  cmake \
+        -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DARGOS_DOCUMENTATION=OFF \
+        -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+        ../src
+  make
+  sudo make install
+  sudo ldconfig
+
+  cd $PACKAGES
+  # <clone Buzz repository>
+  if [ "$BUILD_TARGET" == "simulator" ]; then
+    cd Buzz
+    dfx_checkout_hash {{HASH_BUZZ}}
+    [ -d "build" ] && rm -rf build
+    mkdir build
+    cd build
+    cmake \
+            -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+            -DCMAKE_BUILD_TYPE=Debug \
+            ../src
+    make
+    sudo make install
+    sudo ldconfig
+  fi
+
+  cd $PACKAGES
+  # <clone json repository>
+  cd json
+  dfx_checkout_hash {{HASH_JSON}}
+  [ -d "build" ] && rm -rf build
+  mkdir build
+  cd build
+  cmake -DJSON_BuildTests=OFF ..
+  make
+  sudo make install
+  sudo ldconfig
+  
+  cd $PACKAGES
+  # <clone caf-cpp repository>
+  cd caf-cpp
+  dfx_checkout_hash {{HASH_CAFCPP}}
+  [ -d "build" ] && rm -rf build
+  mkdir build
+  cd build
+  cmake \
+      -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_BUILD_TYPE=Debug \
+      ..
+  make
+  sudo make install
+  sudo ldconfig
+  
+  cd $PACKAGES
+  # <clone argos3-leo repository>
+  cd argos3-leo
+  dfx_checkout_hash {{HASH_LEO}}
+  [ -d "build_sim" ] && rm -rf build_sim
+  mkdir build_sim
+  cd build_sim
+  cmake \
+      -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+      ../src
+  make
+  sudo make install
+  sudo ldconfig
+  
+  cd $PACKAGES
+  # <clone eigen repository>
+  cd eigen
+  dfx_checkout_hash {{HASH_EIGEN}}
+  [ -d "build" ] && rm -rf build
+  mkdir build
+  cd build
+  cmake ..
+  make
+  sudo make install
+  sudo ldconfig
+  
+  cd $PACKAGES
+  # <clone MultiRobotTaskAllocation repository>
+  cd MultiRobotTaskAllocation
+  dfx_checkout_hash {{HASH_MRTA}}
+  [ -d "build" ] && rm -rf build
+  mkdir build
+  cd build
+  cmake \
+      -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+      -DCMAKE_BUILD_TYPE=Debug \
+      ..
+  make
+  sudo make install
+  sudo ldconfig
+  
+  cd $PACKAGES
+
+  # remove a section of libQt5 to work on Turing
+  strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
+  # empty the cache to reduce image size
+  # apt clean
+
+  # add created on info to label
+  DT=`date`
+  echo CREATED_ON $DT >> "$APPTAINER_LABELS"

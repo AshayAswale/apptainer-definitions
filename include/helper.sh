@@ -1,3 +1,14 @@
+dfx_checkout_hash() {
+   hash=$1
+   
+   if [ "$hash" = "latest" ]; then
+      hash=`git rev-parse --short HEAD`
+   else
+      git checkout $hash
+   fi
+}
+
+
 # ARG: HASH of commit to checkout (or latest)
 # ARG: ORG of repository
 # ARG: REPO repository to clone
@@ -81,6 +92,7 @@ dfx_git_clone_adv() {
       git checkout $hash
    fi
 
+   url=https://github.com
 
 }
 

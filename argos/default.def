@@ -11,11 +11,13 @@ From: {{DOCKER_BASE}}
 
   NUM_BUILD_THREADS=20
 
+  SSH_KEY=~/.ssh/id_ed25519
+
   # REPO SOURCE ORGS
   # commonly "ilpincy" or "NESTLab" or "buzz-lang"
   ORG_ARGOS=ilpincy
   ORG_ARGOS_EXAMPLES=NA
-  ORG_BUZZ=NESTLab
+  ORG_BUZZ=NA
   ORG_KHEPERAIV=ilpincy
   ORG_WEBVIZ=NA
   ORG_VICON=NA
@@ -79,6 +81,11 @@ From: {{DOCKER_BASE}}
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
+
+  eval `ssh-agent`
+  ssh-add {{SSH_KEY}}
+
+  # set -e
 
   LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   

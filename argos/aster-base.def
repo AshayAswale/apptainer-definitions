@@ -1,0 +1,103 @@
+Bootstrap: docker
+From: {{DOCKER_BASE}} 
+
+# ===================================
+# === Manually configurable setup ===
+%arguments
+
+  VERSION=v0.12
+
+  DOCKER_BASE=dcat52/argos-requirements:20.04-minimum
+
+  NUM_BUILD_THREADS=20
+  
+  # use "Debug" or "Release"
+  BUILD_TYPE=Debug
+
+  # use "OFF" or "ON"
+  BUILD_DOC=OFF
+  BUILD_LUA=OFF
+
+  PACKAGES=/packages/
+
+  # defaults to "/usr/local/"
+  INSTALL_PREFIX=/usr/local/
+  #"/packages/local/"
+
+# ===================================
+# ===================================
+
+%labels
+  AUTHOR daviscatherman@gmail.com
+  VERSION {{ VERSION }}
+  NAME ASTER_environment
+
+%help
+  This container installs ARGoS3, ARGoS3-Examples, Buzz, and KheperaIV.
+  You can launch this container as a shell, or directly run ARGoS programs by replacing the executable of argos3 with the container.
+
+  View the Labels to see the configuration used of the built container.
+
+%environment
+  export PATH={{INSTALL_PREFIX}}/bin/:$PATH
+  export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  export INSTALL_PREFIX={{INSTALL_PREFIX}}
+  export CMAKE_INCLUDE_PATH={{INSTALL_PREFIX}}
+  export BUILD_TYPE={{BUILD_TYPE}}
+  export PACKAGES={{PACKAGES}}
+
+%setup
+  mkdir -p ${APPTAINER_ROOTFS}/{{PACKAGES}}
+  . definitions/include/helper.sh
+  add_helper
+  add_bashrc
+  add_sshauthsock
+
+%post -c /bin/bash
+  . /.singularity.d/env/90-bashrc.sh
+
+  export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  
+  umask 000
+
+  PACKAGES={{PACKAGES}}
+
+  mkdir -p $PACKAGES
+  cd $PACKAGES
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt update -y
+  apt install -qy git bc gdb tree
+  apt install -qy vim
+  
+  export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
+
+  if dfx_string_not_contains {{DOCKER_BASE}} dcat52; then
+    # pre-reqs only need installed if not preinstalled n the container
+    apt install -qy cmake libfreeimage-dev libfreeimageplus-dev \
+      freeglut3-dev libxi-dev libxmu-dev build-essential
+  fi
+
+  # this pre-req will require python
+  apt install -qy qt5-default python3-pip
+
+  apt install -qy zlib1g-dev libssl-dev
+
+  if [ "{{ BUILD_LUA }}" = "ON" ]; then
+    apt install -qy liblua5.3-dev lua5.3
+  fi
+
+  if [ "{{ BUILD_DOC }}" = "ON" ]; then
+    apt install -qy doxygen asciidoc graphviz libgraphviz-dev
+  fi
+
+  apt install -qy curl lsb-release lsb-core
+  echo -e "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
+  curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+  apt -qy update
+  apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs ros-noetic-nav-msgs
+
+  . /opt/ros/noetic/setup.sh
+
+  cd $PACKAGES

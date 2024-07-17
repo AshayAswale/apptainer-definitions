@@ -52,7 +52,7 @@ From: aster-base.sif
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
-  . /opt/ros/noetic/setup.sh
+  . /.singularity.d/env/90-helper.sh
 
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export DEBIAN_FRONTEND=noninteractive

@@ -38,9 +38,11 @@ From: {{DOCKER_BASE}}
 %setup
   . definitions/include/helper.sh
   add_bashrc
+  add_helper
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
+  . /.singularity.d/env/90-helper.sh
 
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export DEBIAN_FRONTEND=noninteractive
@@ -104,6 +106,7 @@ From: {{DOCKER_BASE}}
   cd $PREBUILT
   # <clone json repository>
   cd json
+  dfx_checkout_hash {{HASH_JSON}}
   [ -d "build" ] && rm -rf build
   mkdir build
   cd build
@@ -115,6 +118,7 @@ From: {{DOCKER_BASE}}
   cd $PREBUILT
   # <clone eigen repository>
   cd eigen
+  dfx_checkout_hash {{HASH_EIGEN}}
   [ -d "build" ] && rm -rf build
   mkdir build
   cd build

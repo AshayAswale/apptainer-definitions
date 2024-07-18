@@ -63,7 +63,7 @@ From: apptainer-definitions/containers/aster-base.sif
   WORKING_DIR={{WORKING_DIR}}
   cd $WORKING_DIR
 
-  BUILD_TARGET="simulator"
+  BUILD_TARGET="leo"
 
   while getopts "t:" opt; do
     case $opt in

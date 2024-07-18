@@ -30,7 +30,7 @@ From: {{DOCKER_BASE}}
 
 %setup
   # umask 000
-  . definitions/include/helper.sh
+  . apptainer-definitions/include/helper.sh
   add_bashrc
   add_helper
 

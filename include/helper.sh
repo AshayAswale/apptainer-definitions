@@ -149,7 +149,7 @@ dfx_string_not_contains() {
 # IMPACTS: /.singularity.d/*
 add_helper() {
    mkdir -p $APPTAINER_ROOTFS/.singularity.d/env
-   cp definitions/include/helper.sh $APPTAINER_ROOTFS/.singularity.d/env/90-helper.sh
+   cp apptainer-definitions/include/helper.sh $APPTAINER_ROOTFS/.singularity.d/env/90-helper.sh
    chmod u+x $APPTAINER_ROOTFS/.singularity.d/env/90-helper.sh
    . $APPTAINER_ROOTFS/.singularity.d/env/90-helper.sh
 }
@@ -158,7 +158,7 @@ add_helper() {
 # IMPACTS: bashrc
 add_bashrc() {
    mkdir -p $APPTAINER_ROOTFS/.singularity.d/env
-   cp definitions/include/bashrc $APPTAINER_ROOTFS/.singularity.d/env/90-bashrc.sh
+   cp apptainer-definitions/include/bashrc $APPTAINER_ROOTFS/.singularity.d/env/90-bashrc.sh
    chmod u+x $APPTAINER_ROOTFS/.singularity.d/env/90-bashrc.sh
 }
 

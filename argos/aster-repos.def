@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: aster-base.sif
+From: apptainer-definitions/containers/aster-base.sif
 
 # ===================================
 # === Manually configurable setup ===
@@ -43,7 +43,7 @@ From: aster-base.sif
 %setup
   # umask 000
   mkdir -p ${APPTAINER_ROOTFS}/{{WORKING_DIR}}
-  . definitions/include/helper.sh
+  . apptainer-definitions/include/helper.sh
   add_bashrc
   add_helper
 

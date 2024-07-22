@@ -20,6 +20,8 @@ From: {{DOCKER_BASE}}
   BUILD_DOC=OFF
   BUILD_LUA=OFF
 
+  PACKAGES=/packages
+
 # ===================================
 # ===================================
 
@@ -39,12 +41,12 @@ From: {{DOCKER_BASE}}
   . /.singularity.d/env/90-helper.sh
 
   export DEBIAN_FRONTEND=noninteractive
-  
   # umask 000
 
-  PREBUILT=/packages
-  mkdir -p $PREBUILT
-  cd $PREBUILT
+  PACKAGES={{PACKAGES}}
+
+  mkdir -p $PACKAGES
+  cd $PACKAGES
 
   apt update -y
   apt install -qy git bc gdb tree
@@ -82,7 +84,7 @@ From: {{DOCKER_BASE}}
     ["eigen"]="https://gitlab.com/libeigen/eigen.git"
   )
 
-  cd $PREBUILT
+  cd $PACKAGES
 
   for dir in "${!repos[@]}"; do
     if [ ! -d "$dir" ]; then
@@ -93,10 +95,10 @@ From: {{DOCKER_BASE}}
     fi
   done
 
-  cd $PREBUILT
+  cd $PACKAGES
   check_directories=("json" "eigen")
 
-  cd $PREBUILT
+  cd $PACKAGES
   # <clone json repository>
   cd json
   dfx_checkout_hash {{HASH_JSON}}
@@ -108,7 +110,7 @@ From: {{DOCKER_BASE}}
   make install
   ldconfig
   
-  cd $PREBUILT
+  cd $PACKAGES
   # <clone eigen repository>
   cd eigen
   dfx_checkout_hash {{HASH_EIGEN}}
@@ -120,4 +122,4 @@ From: {{DOCKER_BASE}}
   make install
   ldconfig
 
-  cd $PREBUILT
+  cd $PACKAGES

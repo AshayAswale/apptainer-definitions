@@ -11,6 +11,13 @@ From: ubuntu:20.04
   #     --build-arg SSH_AUTH_SOCK=$SSH_AUTH_SOCK
 
 %post
+  # IMPACTS: /.singularity.d/*
+  # IMPACTS: $SSH_AUTH_SOCK
+  add_sshauthsock() {
+    mkdir -p $APPTAINER_ROOTFS/.singularity.d/env
+    echo "export SSH_AUTH_SOCK=$SSH_AUTH_SOCK" > $APPTAINER_ROOTFS/.singularity.d/env/90-sshauthsock.sh
+    chmod u+x $APPTAINER_ROOTFS/.singularity.d/env/90-sshauthsock.sh
+  }
 
   PACKAGES=/user-packages
   mkdir $PACKAGES

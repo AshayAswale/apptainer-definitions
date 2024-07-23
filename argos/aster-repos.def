@@ -14,6 +14,9 @@ From: apptainer-definitions/containers/aster-base.sif
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
 
+  # use "simulator" or "leo"
+  BUILD_TARGET=leo
+
   # use "OFF" or "ON"
   BUILD_DOC=OFF
   BUILD_LUA=OFF
@@ -36,6 +39,7 @@ From: apptainer-definitions/containers/aster-base.sif
   export CMAKE_INCLUDE_PATH={{INSTALL_PREFIX}}
   export BUILD_TYPE={{BUILD_TYPE}}
   export WORKING_DIR={{WORKING_DIR}}
+  export BUILD_TARGET={{BUILD_TARGET}}
 
 %runscript
   /bin/bash -rcfile /.singularity.d/env/90-bashrc.sh
@@ -54,7 +58,15 @@ From: apptainer-definitions/containers/aster-base.sif
   . /packages/catkin_ws/devel/setup.bash
   . /packages/catkin_ws/install/setup.bash
 
+
+  export PATH={{INSTALL_PREFIX}}/bin/:$PATH
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
+  export INSTALL_PREFIX={{INSTALL_PREFIX}}
+  export CMAKE_INCLUDE_PATH={{INSTALL_PREFIX}}
+  export BUILD_TYPE={{BUILD_TYPE}}
+  export WORKING_DIR={{WORKING_DIR}}
+  export BUILD_TARGET={{BUILD_TARGET}}
+
   export DEBIAN_FRONTEND=noninteractive
   
   # umask 000
@@ -64,8 +76,6 @@ From: apptainer-definitions/containers/aster-base.sif
 
   WORKING_DIR={{WORKING_DIR}}
   cd $WORKING_DIR
-
-  BUILD_TARGET="leo"
 
   while getopts "t:" opt; do
     case $opt in
@@ -116,7 +126,7 @@ From: apptainer-definitions/containers/aster-base.sif
     make install
     ldconfig
   fi
-  
+
   cd $WORKING_DIR
   # <clone caf-cpp repository>
   cd caf-cpp
@@ -135,9 +145,9 @@ From: apptainer-definitions/containers/aster-base.sif
   cd $WORKING_DIR
   # <clone argos3-leo repository>
   cd argos3-leo
-  [ -d "build_sim" ] && rm -rf build_sim
-  mkdir build_sim
-  cd build_sim
+  [ -d "build" ] && rm -rf build
+  mkdir build
+  cd build
   cmake \
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \

@@ -51,6 +51,8 @@ From: apptainer-definitions/containers/aster-base.sif
   . /.singularity.d/env/90-bashrc.sh
   . /.singularity.d/env/90-helper.sh
   . /opt/ros/noetic/setup.sh
+  . /packages/catkin_ws/devel/setup.bash
+  . /packages/catkin_ws/install/setup.bash
 
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export DEBIAN_FRONTEND=noninteractive

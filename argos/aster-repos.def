@@ -48,7 +48,7 @@ From: aster-base.sif
   # umask 000
   mkdir -p ${APPTAINER_ROOTFS}/{{WORKING_DIR}}
   . definitions/include/helper.sh
-  add_bashrc
+  # add_bashrc
   add_helper
 
 %post -c /bin/bash
@@ -107,23 +107,23 @@ From: aster-base.sif
   make install
   ldconfig
 
-  cd $WORKING_DIR
-  # <clone Buzz repository>
-  if [ "$BUILD_TARGET" == "simulator" ]; then
-    cd Buzz
-    [ -d "build" ] && rm -rf build
-    mkdir build
-    cd build
-    cmake \
-            -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DARGOS_BUILD_FOR=${BUILD_TARGET} \
-            -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
-            ../src
-    make -j ${NUM_BUILD_THREADS}
-    make install
-    ldconfig
-  fi
+  # cd $WORKING_DIR
+  # # <clone Buzz repository>
+  # if [ "$BUILD_TARGET" == "simulator" ]; then
+  #   cd Buzz
+  #   [ -d "build" ] && rm -rf build
+  #   mkdir build
+  #   cd build
+  #   cmake \
+  #           -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
+  #           -DCMAKE_BUILD_TYPE=Debug \
+  #           -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+  #           -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
+  #           ../src
+  #   make -j ${NUM_BUILD_THREADS}
+  #   make install
+  #   ldconfig
+  # fi
 
   cd $WORKING_DIR
   # <clone caf-cpp repository>
@@ -139,6 +139,15 @@ From: aster-base.sif
   make -j ${NUM_BUILD_THREADS}
   make install
   ldconfig
+
+
+  ARGS="source /opt/ros/noetic/setup.bash"
+  addto_bashrc
+  ARGS="source /packages/catkin_ws/devel/setup.bash"
+  addto_bashrc
+  ARGS="source /packages/catkin_ws/install/setup.bash"
+  addto_bashrc
+  . /.singularity.d/env/90-bashrc.sh
   
   cd $WORKING_DIR
   # <clone argos3-leo repository>
@@ -181,6 +190,3 @@ From: aster-base.sif
   # add created on info to label
   DT=`date`
   echo CREATED_ON $DT >> "$APPTAINER_LABELS"
-
-  ARGS="source /opt/ros/noetic/setup.bash"
-  addto_bashrc

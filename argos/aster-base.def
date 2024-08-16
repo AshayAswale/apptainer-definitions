@@ -9,12 +9,13 @@ From: {{DOCKER_BASE}}
 
   DOCKER_BASE=ubuntu:20.04
 
-  NUM_BUILD_THREADS=4
+  NUM_BUILD_THREADS=12
 
   # GIT HASHES
   # use "latest" for most recent commit
   HASH_JSON=v3.11.3
   HASH_EIGEN=3.4
+  HASH_AR_TRACK_ALVAR=noetic-devel
 
   # use "OFF" or "ON"
   BUILD_DOC=OFF
@@ -76,12 +77,14 @@ From: {{DOCKER_BASE}}
   curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
   apt -qy update
   apt install -qy ros-noetic-ros-comm ros-noetic-geometry-msgs ros-noetic-nav-msgs
+  apt install -qy ros-noetic-cmake-modules ros-noetic-cv-bridge ros-noetic-dynamic-reconfigure ros-noetic-image-transport ros-noetic-pcl-conversions ros-noetic-pcl-ros ros-noetic-resource-retriever ros-noetic-visualization-msgs libtinyxml-dev
 
   . /opt/ros/noetic/setup.sh
 
   declare -A repos=(
     ["json"]="https://github.com/nlohmann/json.git"
     ["eigen"]="https://gitlab.com/libeigen/eigen.git"
+    ["ar_track_alvar"]="https://github.com/ros-perception/ar_track_alvar.git"
   )
 
   cd $PACKAGES
@@ -96,7 +99,7 @@ From: {{DOCKER_BASE}}
   done
 
   cd $PACKAGES
-  check_directories=("json" "eigen")
+  check_directories=("json" "eigen" "ar_track_alvar")
 
   cd $PACKAGES
   # <clone json repository>
@@ -121,5 +124,15 @@ From: {{DOCKER_BASE}}
   make -j {{NUM_BUILD_THREADS}}
   make install
   ldconfig
+
+  cd $PACKAGES
+  # <clone json repository>
+  mkdir -p catkin_ws/src
+  mv ar_track_alvar/ catkin_ws/src/
+  cd catkin_ws/src/ar_track_alvar
+  dfx_checkout_hash {{HASH_AR_TRACK_ALVAR}}
+  cd ../..
+  rm -rf build devel install
+  catkin_make install
 
   cd $PACKAGES

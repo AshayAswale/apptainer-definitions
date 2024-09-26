@@ -151,7 +151,7 @@ From: apptainer-definitions/containers/aster-base.sif
   cmake \
       -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
       -DCMAKE_BUILD_TYPE=Debug \
-      -DARGOS_BUILD_FOR=${BUILD_TARGET} \
+      -DARGOS_BUILD_FOR=leo \
       -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
       ../src
   make -j ${NUM_BUILD_THREADS}

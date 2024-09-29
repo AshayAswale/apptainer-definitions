@@ -1,0 +1,105 @@
+Bootstrap: docker
+From: {{DOCKER_BASE}}
+
+# ===================================
+# === Manually configurable setup ===
+%arguments
+
+  VERSION=v0.1
+
+  DOCKER_BASE=ubuntu:24.04
+
+  # REPO SOURCE ORGS
+  # commonly "ilpincy" or "NESTLab" or "buzz-lang"
+  ORG_ARGOS=ilpincy
+  ORG_ARGOS_EXAMPLES=NA
+  ORG_BUZZ=NESTLab
+  ORG_KHEPERAIV=ilpincy
+  ORG_WEBVIZ=NA
+  ORG_VICON=NA
+
+  # GIT HASHES
+  # use "latest" for most recent commit
+  HASH_ARGOS=latest
+  HASH_ARGOS_EXAMPLES=latest
+  HASH_BUZZ=latest
+  HASH_KHEPERAIV=latest
+  HASH_WEBVIZ=feature/update-cmake
+  HASH_VICON=latest
+
+  WORKING_DIR=
+
+# ===================================
+# ===================================
+
+%labels
+  AUTHOR daviscatherman@gmail.com
+  VERSION {{VERSION}}
+  NAME argos_default_clone
+
+%help
+  Clones argos repositories into WORKING_DIR=
+  WORKING_DIR must be provided
+
+%setup
+  mkdir -p {{WORKING_DIR}}
+  mkdir -p ${APPTAINER_ROOTFS}/{{WORKING_DIR}}
+  . definitions/include/helper.sh
+  add_bashrc
+  add_helper
+
+%post -c /bin/bash
+  . /.singularity.d/env/90-bashrc.sh
+  . /.singularity.d/env/90-helper.sh
+
+  WORKING_DIR={{WORKING_DIR}}
+  
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt update -y
+  apt install -qy git
+
+  cd $WORKING_DIR
+  echo $WORKING_DIR
+
+  cd $WORKING_DIR
+  if [ "{{ORG_ARGOS}}" != "NA" ]; then
+    git clone http://github.com/{{ORG_ARGOS}}/argos3.git
+    cd argos3
+    dfx_checkout_hash {{HASH_ARGOS}}
+  fi
+
+  cd $WORKING_DIR
+  if [ "{{ORG_ARGOS_EXAMPLES}}" != "NA" ]; then
+    git clone http://github.com/{{ORG_ARGOS_EXAMPLES}}/argos3-examples.git
+    cd argos3-examples
+    dfx_checkout_hash {{HASH_ARGOS_EXAMPLES}}
+  fi
+
+  cd $WORKING_DIR
+  if [ "{{ORG_BUZZ}}" != "NA" ]; then
+    git clone http://github.com/{{ORG_BUZZ}}/Buzz.git buzz
+    cd buzz
+    dfx_checkout_hash {{HASH_BUZZ}}
+  fi
+
+  cd $WORKING_DIR
+  if [ "{{ORG_KHEPERAIV}}" != "NA" ]; then
+    git clone http://github.com/{{ORG_KHEPERAIV}}/argos3-kheperaiv.git
+    cd argos3-kheperaiv
+    dfx_checkout_hash {{HASH_KHEPERAIV}}
+  fi
+
+  cd $WORKING_DIR
+  if [ "{{ORG_WEBVIZ}}" != "NA" ]; then
+    git clone http://github.com/{{ORG_WEBVIZ}}/argos3-webviz.git
+    cd argos3-webviz
+    dfx_checkout_hash {{HASH_WEBVIZ}}
+  fi
+
+  cd $WORKING_DIR
+  if [ "{{ORG_VICON}}" != "NA" ]; then
+    git clone http://github.com/{{ORG_VICON}}/Vicon.git vicon
+    cd vicon
+    dfx_checkout_hash {{HASH_VICON}}
+  fi

@@ -11,25 +11,13 @@ From: {{DOCKER_BASE}}
 
   NUM_BUILD_THREADS=20
 
-  SSH_KEY=~/.ssh/id_ed25519
-
-  # REPO SOURCE ORGS
-  # commonly "ilpincy" or "NESTLab" or "buzz-lang"
-  ORG_ARGOS=ilpincy
-  ORG_ARGOS_EXAMPLES=NA
-  ORG_BUZZ=NA
-  ORG_KHEPERAIV=ilpincy
-  ORG_WEBVIZ=NA
-  ORG_VICON=NA
-
-  # GIT HASHES
-  # use "latest" for most recent commit
-  HASH_ARGOS=latest
-  HASH_ARGOS_EXAMPLES=latest
-  HASH_BUZZ=latest
-  HASH_KHEPERAIV=latest
-  HASH_WEBVIZ=feature/update-cmake
-  HASH_VICON=latest
+  # BUILD & INSTALL REPO
+  _ARGOS=y
+  _ARGOS_EXAMPLES=n
+  _BUZZ=y
+  _KHEPERAIV=y
+  _WEBVIZ=n
+  _VICON=n
   
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
@@ -41,7 +29,7 @@ From: {{DOCKER_BASE}}
   FORCE_NO_QT=OFF
   ARGOS_INSTALL_LDSOCONF=ON
 
-  PACKAGES=/packages
+  WORKING_DIR=
 
   # defaults to "/usr/local"
   INSTALL_PREFIX=/usr/local
@@ -61,40 +49,37 @@ From: {{DOCKER_BASE}}
 
   View the Labels to see the configuration used of the built container.
 
+%setup
+  mkdir -p ${APPTAINER_ROOTFS}/{{WORKING_DIR}}
+
 %environment
   export PATH={{INSTALL_PREFIX}}/bin/:$PATH
   export LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   export INSTALL_PREFIX={{INSTALL_PREFIX}}
   export CMAKE_INCLUDE_PATH={{INSTALL_PREFIX}}
   export BUILD_TYPE={{BUILD_TYPE}}
-  export PACKAGES={{PACKAGES}}
+  export WORKING_DIR={{WORKING_DIR}}
 
-%test
+%runscript
+  /bin/bash -rcfile /.singularity.d/env/90-bashrc.sh
+
+  . /.singularity.d/env/90-bashrc.sh
+  . /.singularity.d/env/90-helper.sh
   argos3 -q all
 
 %setup
-  mkdir -p ${APPTAINER_ROOTFS}/{{PACKAGES}}
   . definitions/include/helper.sh
-  add_helper
   add_bashrc
-  add_sshauthsock
+  add_helper
 
 %post -c /bin/bash
   . /.singularity.d/env/90-bashrc.sh
-
-  eval `ssh-agent`
-  ssh-add {{SSH_KEY}}
-
-  # set -e
+  . /.singularity.d/env/90-helper.sh
 
   LD_LIBRARY_PATH={{INSTALL_PREFIX}}/lib/:$LD_LIBRARY_PATH
   
-  umask 000
-
-  PACKAGES={{PACKAGES}}
-
-  mkdir -p $PACKAGES
-  cd $PACKAGES
+  # umask 000
+  WORKING_DIR={{WORKING_DIR}}
   
   export DEBIAN_FRONTEND=noninteractive
 
@@ -120,9 +105,8 @@ From: {{DOCKER_BASE}}
     apt install -qy doxygen asciidoc graphviz libgraphviz-dev
   fi
 
-  cd $PACKAGES
+  cd $WORKING_DIR
 
-  dfx_git_clone_adv org={{ORG_ARGOS}} repo=argos3 hash={{HASH_ARGOS}}
   cmake_args="
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
@@ -132,58 +116,59 @@ From: {{DOCKER_BASE}}
               -DARGOS_FORCE_NO_QTOPENGL={{FORCE_NO_QT}}
               "
   dfx_make_build \
-    ignore={{ORG_ARGOS}} \
+    build={{_ARGOS}} \
+    folder=argos3 \
     dir=build_simulator \
-    src=../src
+    src=src
 
-  cd $PACKAGES
+  cd $WORKING_DIR
 
-  dfx_git_clone_adv org={{ORG_ARGOS_EXAMPLES}} repo=argos3-examples hash={{HASH_ARGOS_EXAMPLES}}
   cmake_args="-DCMAKE_BUILD_TYPE={{BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}}"
   dfx_make_build \
-    ignore={{ORG_ARGOS_EXAMPLES}} \
+    build={{_ARGOS_EXAMPLES}} \
+    folder=argos3-examples \
     dir=build \
-    src=../src
+    src=src
 
-  cd $PACKAGES
+  cd $WORKING_DIR
 
-  dfx_git_clone_adv org={{ORG_BUZZ}} repo=Buzz hash={{HASH_BUZZ}} dir=buzz
   cmake_args="
               -DCMAKE_BUILD_TYPE={{BUILD_TYPE}} 
               -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}} 
               -DARGOS_FORCE_NO_QTOPENGL={{FORCE_NO_QT}} 
               "
   dfx_make_build \
-    ignore={{ORG_BUZZ}} \
+    build={{_BUZZ}} \
+    folder=buzz \
     dir=build \
-    src=../src
+    src=src
 
-  cd $PACKAGES
+  cd $WORKING_DIR
 
-  dfx_git_clone_adv org={{ORG_KHEPERAIV}} repo=argos3-kheperaiv hash={{HASH_KHEPERAIV}}
   dfx_make_build \
-    ignore={{ORG_KHEPERAIV}} \
+    build={{_KHEPERAIV}} \
+    folder=argos3-kheperaiv \
     dir=build \
-    src=../src
+    src=src
 
-  cd $PACKAGES
+  cd $WORKING_DIR
 
-  dfx_git_clone_adv org={{ORG_WEBVIZ}} repo=argos3-webviz hash={{HASH_WEBVIZ}}
   dfx_make_build \
-    ignore={{ORG_WEBVIZ}} \
+    build={{_WEBVIZ}} \
+    folder=argos3-webviz \
     dir=build \
-    src=../src
+    src=src
 
-  cd $PACKAGES
+  cd $WORKING_DIR
 
-  dfx_git_clone_adv org={{ORG_VICON}} repo=Vicon hash={{HASH_VICON}} vicon
   dfx_make_build \
-    ignore={{ORG_VICON}} \
+    build={{_VICON}} \
+    folder=vicon \
     dir=build \
-    src=..
+    src=
   
   # remove a section of libQt5 to work on Turing
-  strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
+  # strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
   # empty the cache to reduce image size
   # apt clean
 
@@ -197,11 +182,3 @@ From: {{DOCKER_BASE}}
   echo _BUILD_NATIVE {{BUILD_NATIVE}} >>  "$APPTAINER_LABELS"
   # store whether build doc into a label
   echo _BUILD_DOC {{BUILD_DOC}} >>  "$APPTAINER_LABELS"
-
-  # store the git hashes into labels
-  echo _ORG_ARGOS {{ORG_ARGOS}} >> "$APPTAINER_LABELS"
-  echo _ORG_ARGOS_EXAMPLES {{ORG_ARGOS_EXAMPLES}} >> "$APPTAINER_LABELS"
-  echo _ORG_BUZZ {{ORG_BUZZ}} >> "$APPTAINER_LABELS"
-  echo _ORG_KHEPERAIV {{ORG_KHEPERAIV}} >> "$APPTAINER_LABELS"
-  echo _ORG_WEBVIZ {{ORG_WEBVIZ}} >> "$APPTAINER_LABELS"
-  echo _ORG_VICON {{ORG_VICON}} >> "$APPTAINER_LABELS"

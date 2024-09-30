@@ -17,7 +17,7 @@ From: {{DOCKER_BASE}}
   _BUZZ=y
   _KHEPERAIV=y
   _WEBVIZ=n
-  _VICON=n
+  _VICON=y
   
   # use "Debug" or "Release"
   BUILD_TYPE=Debug
@@ -161,6 +161,11 @@ From: {{DOCKER_BASE}}
 
   cd $WORKING_DIR
 
+  cmake_args="
+              -DCMAKE_BUILD_TYPE={{BUILD_TYPE}}
+              -DCMAKE_INSTALL_PREFIX={{INSTALL_PREFIX}}
+              -DARGOS_FORCE_NO_QTOPENGL={{FORCE_NO_QT}}
+              "
   dfx_make_build \
     build={{_VICON}} \
     folder=vicon \

@@ -41,6 +41,28 @@ dfx_string_not_contains() {
    return 1
 }
 
+dfx_make_build() {
+   echo Params: "$@"
+
+   for arg in "$@" ; do
+      eval $arg
+   done
+
+   if [ "$build" = "n" ]; then
+      return
+   fi
+
+   cd $folder
+
+   mkdir -p $dir
+   cd $dir
+   cmake $cmake_args ../$src
+   make -j $(( $(nproc) - 1 ))
+   make install
+   ldconfig
+
+}
+
 # IMPACTS: /.singularity.d/*
 add_helper() {
    mkdir -p $APPTAINER_ROOTFS/.singularity.d/env

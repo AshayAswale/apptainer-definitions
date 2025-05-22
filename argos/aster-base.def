@@ -14,7 +14,7 @@ From: {{DOCKER_BASE}}
   # GIT HASHES
   # use "latest" for most recent commit
   HASH_JSON=v3.11.3
-  HASH_EIGEN=3.4
+  HASH_EIGEN=3.4.0
   HASH_AR_TRACK_ALVAR=noetic-devel
 
   # use "OFF" or "ON"

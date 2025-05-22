@@ -15,7 +15,7 @@ From: apptainer-definitions/containers/aster-base.sif
   BUILD_TYPE=Debug
 
   # use "simulator" or "leo"
-  BUILD_TARGET=leo
+  BUILD_TARGET=simulator
 
   # use "OFF" or "ON"
   BUILD_DOC=OFF
@@ -92,12 +92,17 @@ From: apptainer-definitions/containers/aster-base.sif
 
   echo Building for target "$BUILD_TARGET"
 
+  apt update -y
+  apt install -qy libgmock-dev
+
+  echo "##### Installing ARGOS #####"
+
 
   cd $WORKING_DIR
   cd argos3
-  [ -d "build_simulator" ] && rm -rf build_simulator
-  mkdir build_simulator
-  cd build_simulator
+  [ -d "build" ] && rm -rf build
+  mkdir build
+  cd build
   cmake \
         -DCMAKE_CXX_FLAGS="-O0 -DDEBUG -fno-omit-frame-pointer -fsanitize=address " \
         -DCMAKE_BUILD_TYPE=Debug \
@@ -127,6 +132,8 @@ From: apptainer-definitions/containers/aster-base.sif
   #   ldconfig
   # fi
 
+  echo "##### Installing CAF #####"
+
   cd $WORKING_DIR
   # <clone caf-cpp repository>
   cd caf-cpp
@@ -141,6 +148,8 @@ From: apptainer-definitions/containers/aster-base.sif
   make -j ${NUM_BUILD_THREADS}
   make install
   ldconfig
+
+  echo "##### Installing ARGOS-Leo #####"
   
   cd $WORKING_DIR
   # <clone argos3-leo repository>
@@ -157,6 +166,8 @@ From: apptainer-definitions/containers/aster-base.sif
   make -j ${NUM_BUILD_THREADS}
   make install
   ldconfig
+  
+  echo "##### Installing MRTA #####"
   
   cd $WORKING_DIR
   # <clone MultiRobotTaskAllocation repository>
